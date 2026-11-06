@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Narrative Messaging Evidence</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<style>
+/* Layout: a plain home page (search, study list, map, summary), then a research desk (filter rail + views) sharing one selection */
+/* Healy-style: near-white page, slate serif text, cobalt links, no cards or shadows */
+:root{
+  --bg:#fefefe; --surface:#fefefe; --surface-2:#f0f2f5; --line:#e3e7ec; --line-2:#c9d1d9;
+  --ink:#2c3e50; --fg:#34495e; --muted:#5d6d7e; --faint:#8a97a5;
+  --accent:#0047ab; --accent-ink:#0047ab; --accent-weak:#eaf0f8;
+  --signal:#b8402a; --signal-weak:#f7e9e5;
+  --land:#e8ecf0; --land-on:#cddbec; --sea:#fefefe;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#6250d6; --c8:#e34948;
+  --pos:#0a7f0a; --neg:#b8402a;
+  --serif:"Gelasio","Iowan Old Style",Georgia,serif;
+  --sans:"Gelasio","Iowan Old Style",Georgia,serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:0px; --sh:none;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171b20; --surface:#171b20; --surface-2:#222831; --line:#2c343e; --line-2:#3c4652;
+  --ink:#e4eaf0; --fg:#cdd6df; --muted:#9aa7b4; --faint:#76838f;
+  --accent:#86aef0; --accent-ink:#86aef0; --accent-weak:#1c2a3f;
+  --signal:#e07a5f; --signal-weak:#3a2620;
+  --land:#262d36; --land-on:#24395a; --sea:#171b20;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#2a9d2a; --c7:#9085e9; --c8:#e66767;
+  --pos:#4cc44c; --neg:#e07a5f; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#171b20; --surface:#171b20; --surface-2:#222831; --line:#2c343e; --line-2:#3c4652;
+  --ink:#e4eaf0; --fg:#cdd6df; --muted:#9aa7b4; --faint:#76838f;
+  --accent:#86aef0; --accent-ink:#86aef0; --accent-weak:#1c2a3f;
+  --signal:#e07a5f; --signal-weak:#3a2620;
+  --land:#262d36; --land-on:#24395a; --sea:#171b20;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#2a9d2a; --c7:#9085e9; --c8:#e66767;
+  --pos:#4cc44c; --neg:#e07a5f; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:50;background:var(--surface)}
+h1,h2,h3,h4{font-family:var(--serif);color:var(--ink);font-weight:500;text-wrap:balance;margin:0;letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--accent-ink)}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wide{max-width:1320px;margin:0 auto}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wide{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand svg{flex:none}
+.brand b{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:-.01em}
+.brand span{display:block;font-size:11px;color:var(--faint);letter-spacing:.04em;margin-top:-3px}
+.nav{display:flex;gap:2px;flex-wrap:wrap;margin-left:auto}
+.nav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;font-weight:500;font-size:14px}
+.nav a:hover{background:var(--surface-2);color:var(--fg)}
+.nav a[aria-current="page"]{color:var(--ink);background:var(--surface-2)}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--muted);display:inline-flex;align-items:center}
+.iconbtn:hover{color:var(--fg);border-color:var(--line-2)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 18px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid transparent;transition:transform .12s,background .12s}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line-2);color:var(--ink);background:var(--surface)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.linkbtn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none}
+.linkbtn:hover{border-color:var(--accent);color:var(--accent-ink)}
+.linkbtn.oa{border-color:transparent;background:var(--accent-weak);color:var(--accent-ink)}
+
+/* ---------- HOME ---------- */
+.hero{padding-block:56px 30px}
+.hero .wide{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:48px;align-items:center}
+@media(max-width:960px){.hero .wide{grid-template-columns:1fr;gap:28px}}
+.hero h1{font-size:clamp(36px,5.4vw,64px);line-height:1.02;font-weight:400;margin:14px 0 18px}
+.hero h1 em{font-style:italic;color:var(--accent-ink)}
+.hero .lede{font-size:18px;line-height:1.6;color:var(--muted);max-width:56ch}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.reel{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);padding:22px;min-width:0}
+.reel .rh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+.reel .rh h3{font-size:18px}
+.reel .big{font-family:var(--mono);font-size:54px;font-weight:600;color:var(--ink);letter-spacing:-.03em;line-height:1}
+.reel .bigcap{font-size:13px;color:var(--muted);margin-top:6px}
+.statstrip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}
+.statstrip div{padding:18px 16px;border-right:1px solid var(--line);min-width:0}
+.statstrip div:last-child{border-right:none}
+.statstrip b{display:block;font-family:var(--mono);font-size:28px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
+.statstrip span{font-size:12.5px;color:var(--muted)}
+@media(max-width:760px){.statstrip{grid-template-columns:repeat(2,1fr)}.statstrip div{border-bottom:1px solid var(--line)}}
+.section{padding-block:44px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+.section-head h2{font-size:clamp(26px,3vw,36px);font-weight:400}
+.section-head p{color:var(--muted);max-width:60ch;margin-top:6px}
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media(max-width:900px){.mapwrap{grid-template-columns:1fr}}
+.mapcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:10px;min-width:0;position:relative}
+.mapcard svg{width:100%;height:auto;display:block}
+.maphint{position:absolute;left:18px;bottom:14px;font-size:12px;color:var(--muted);background:var(--surface);padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+.mapwrap{align-items:stretch}
+.clist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:6px;min-width:0;max-height:480px;overflow:auto}
+@media(max-width:900px){.clist{max-height:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+.clist button{display:grid;grid-template-columns:1fr auto;gap:1px 10px;width:100%;text-align:left;background:none;border:none;padding:5px 9px;border-radius:7px}
+.clist button:hover{background:var(--surface-2)}
+.clist button[aria-pressed="true"]{background:var(--accent-weak)}
+.clist .cn{font-weight:600;font-size:14px;color:var(--ink)}
+.clist .cc{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right}
+.clist .bar{grid-column:1/-1;height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.clist .bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.clist .zero .cn,.clist .zero .cc{opacity:.45}
+.ways{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:860px){.ways{grid-template-columns:1fr}}
+.way{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;transition:border-color .15s,transform .15s}
+.way:hover{border-color:var(--accent);transform:translateY(-2px)}
+.way h3{font-size:22px;margin:12px 0 6px}
+.way p{color:var(--muted);font-size:14px}
+.way .go{margin-top:14px;font-weight:600;font-size:13.5px;color:var(--accent-ink)}
+.way .glyph{width:40px;height:40px;border-radius:10px;background:var(--accent-weak);color:var(--accent-ink);display:grid;place-items:center}
+.findgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+@media(max-width:900px){.findgrid{grid-template-columns:1fr}}
+.cited{display:flex;flex-direction:column}
+.cited button{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:baseline;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);padding:12px 4px}
+.cited button:hover .ct{color:var(--accent-ink)}
+.cited .rk{font-family:var(--mono);color:var(--faint);font-size:12px}
+.cited .ct{font-family:var(--serif);font-size:16.5px;color:var(--ink);line-height:1.3}
+.cited .cm{font-size:12.5px;color:var(--muted);display:block;margin-top:2px;font-family:var(--sans)}
+.cited .cv{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
+footer{border-top:1px solid var(--line);padding-block:32px 48px;color:var(--muted);font-size:13px;margin-top:20px}
+footer .wide{display:flex;gap:30px;flex-wrap:wrap;justify-content:space-between}
+
+/* ---------- DESK (explore + papers) ---------- */
+.desk{display:grid;grid-template-columns:300px minmax(0,1fr);gap:22px;align-items:start;padding-block:22px 60px}
+@media(max-width:900px){.desk{grid-template-columns:1fr}}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);max-height:calc(100vh - 90px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);min-width:0}
+@media(max-width:900px){.rail{position:static;max-height:none}}
+.rail-sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+.rail-sec:last-child{border-bottom:none}
+.rail h4{font-family:var(--sans);font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px}
+select,input[type=search]{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 9px;font:inherit;font-size:13.5px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.seg button{flex:1;background:none;border:none;color:var(--muted);padding:7px 6px;font-size:12.5px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.yr{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.yr span{color:var(--faint);font-size:12px}
+details.facet{border-bottom:1px solid var(--line)}
+details.facet:last-child{border-bottom:none}
+details.facet summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:11px 16px;font-weight:600;font-size:13.5px;color:var(--ink)}
+details.facet summary::-webkit-details-marker{display:none}
+details.facet summary .act{font-size:11px;font-weight:700;background:var(--signal);color:#fff;border-radius:999px;padding:1px 7px;margin-left:6px}
+details.facet summary .chev{color:var(--faint);transition:transform .15s}
+details.facet[open] summary .chev{transform:rotate(90deg)}
+.opts{padding:0 10px 10px}
+.opt{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 6px;border-radius:7px;font-size:13.5px;cursor:pointer}
+.opt:hover{background:var(--surface-2)}
+.opt input{accent-color:var(--ink);margin:0}
+.opt .oc{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;min-width:3ch}
+.opt.dim{opacity:.42}
+.opt .ol{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{background:none;border:none;color:var(--accent-ink);font-size:12.5px;font-weight:600;padding:4px 6px}
+.countnote{font-size:11.5px;color:var(--faint);padding:0 16px 10px}
+
+.selbar{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px 18px;margin-bottom:16px}
+.selbar .row1{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.selbar .n{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--ink);letter-spacing:-.02em}
+.selbar .n small{font-family:var(--sans);font-size:14px;font-weight:500;color:var(--muted);letter-spacing:0}
+.selbar .clear{margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:12.5px;color:var(--muted)}
+.trail{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+.step{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;max-width:100%}
+.step.base{padding-right:11px}
+.step .sl{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.step .sl b{color:var(--ink);font-weight:600}
+.step .sc{font-family:var(--mono);font-weight:600;color:var(--ink);background:var(--surface);border-radius:999px;padding:0 7px;border:1px solid var(--line)}
+.step.active{border-color:var(--signal);background:var(--signal-weak)}
+.step .x{background:none;border:none;color:var(--faint);padding:0 4px;font-size:15px;line-height:1}
+.step .x:hover{color:var(--neg)}
+.arrow{color:var(--faint);font-size:13px}
+.trail-help{font-size:12.5px;color:var(--faint);margin-top:8px}
+
+.subtabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.subtabs button{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 14px;font-weight:600;font-size:14px;color:var(--muted)}
+.subtabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:16px;min-width:0}
+.panel h3{font-size:20px}
+.cap{color:var(--muted);font-size:13px;margin:4px 0 14px;max-width:80ch}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+@media(max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);min-width:0}
+.tile .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.tile .v{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--ink);margin-top:4px;letter-spacing:-.02em}
+.tile .d{font-size:12px;color:var(--muted);margin-top:2px}
+.tile.hero .v{color:var(--accent-ink)}
+.scrollx{overflow-x:auto}
+svg text{font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.inline-fields{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.inline-fields .field{min-width:200px}
+.note{font-size:13px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}
+.note b{color:var(--fg)}
+.pt{cursor:pointer}
+.rowhit{cursor:pointer}
+.rowhit:hover rect.hl{fill:var(--accent-weak)}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--surface);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700;cursor:pointer;user-select:none;z-index:1}
+th:hover{color:var(--fg)}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface-2)}
+.tbl-scroll{max-height:640px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.tag.ee{background:var(--accent-weak);color:var(--accent-ink);border-color:transparent}
+.neg{color:var(--neg)}
+
+/* papers */
+.ptools{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+.ptools .field{margin:0;min-width:180px}
+.ptools .grow{flex:1;min-width:200px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+@media(max-width:420px){.pgrid{grid-template-columns:1fr}}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:9px;min-width:0;transition:border-color .15s}
+.pcard:hover{border-color:var(--line-2)}
+.pcard .who{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.pcard .who b{font-size:13px;font-weight:600;color:var(--muted)}
+.pcard .who span{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.pcard h4{font-size:17.5px;line-height:1.28;font-weight:500}
+.pcard h4 button{all:unset;cursor:pointer}
+.pcard h4 button:hover{color:var(--accent-ink)}
+.pcard h4 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pcard .venue{font-size:13px;color:var(--muted);font-style:italic;font-family:var(--serif)}
+.pcard .tags{display:flex;flex-wrap:wrap;gap:5px}
+.pcard .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:10px;border-top:1px dashed var(--line)}
+.pcard .stat{font-size:12.5px;color:var(--muted)}
+.pcard .stat b{font-family:var(--mono);color:var(--ink)}
+.pcard .links{display:flex;gap:6px;flex-wrap:wrap}
+.empty{padding:40px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line-2);border-radius:var(--r)}
+
+/* drawer */
+#drawer{position:fixed;inset:0;z-index:70}
+#drawer .scrim{position:absolute;inset:0;background:rgba(10,20,20,.38)}
+#drawer .sheet{position:absolute;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--surface);border-left:1px solid var(--line);box-shadow:-10px 0 40px rgba(0,0,0,.18);overflow:auto;padding:calc(env(safe-area-inset-top,0px) + 22px) max(22px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 30px) 22px;animation:slide .2s ease-out}
+@keyframes slide{from{transform:translateX(30px);opacity:.4}to{transform:none;opacity:1}}
+.sheet .close{float:right;background:var(--surface-2);border:none;border-radius:8px;padding:6px 10px;font-size:13px;color:var(--muted)}
+.sheet h2{font-size:26px;line-height:1.2;margin:10px 0 8px;clear:both}
+.sheet .meta{color:var(--muted);font-size:14px}
+.sheet .links{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.sheet dl{display:grid;grid-template-columns:140px 1fr;gap:6px 14px;font-size:13.5px;margin:16px 0}
+.sheet dt{color:var(--faint)}
+.sheet dd{margin:0;color:var(--fg)}
+.sheet h3{font-size:18px;margin:22px 0 8px}
+
+/* data / about */
+.prose{max-width:72ch}
+.prose p{margin:0 0 14px;color:var(--fg)}
+.prose h3{font-size:22px;margin:26px 0 10px}
+.prose ul{color:var(--fg);padding-left:20px}
+.prose li{margin-bottom:6px}
+.prose code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.road{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:12px}
+@media(max-width:800px){.road{grid-template-columns:1fr}}
+.road div{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface)}
+.road b{display:block;font-family:var(--serif);font-size:17px;color:var(--ink);font-weight:500;margin-bottom:4px}
+.road span{font-size:13px;color:var(--muted)}
+.road .st{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--signal);margin-bottom:6px;display:block}
+.copyrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 4px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:90;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+
+#tip{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:8px 11px;border-radius:8px;max-width:280px;box-shadow:0 6px 22px rgba(0,0,0,.25);opacity:0;transition:opacity .08s;line-height:1.45}
+#tip .tt{font-family:var(--serif);font-size:14px;font-weight:600}
+#tip .tm{font-family:var(--mono);font-size:12px}
+[hidden]{display:none!important}
+
+/* ---------- Healy overrides ---------- */
+body{font-size:18px;line-height:1.6}
+h1,h2,h3,h4{font-weight:400;letter-spacing:0}
+a{text-decoration:none}a:hover{text-decoration:underline}
+.top{background:var(--surface-2);backdrop-filter:none;border-bottom:1px solid var(--line)}
+.top .wide,.home .wide{max-width:960px}
+.brand b{font-weight:400;font-variant:small-caps;font-size:21px;letter-spacing:.03em}
+.nav a{border-radius:0;color:var(--accent-ink);font-size:16px;padding:6px 10px}
+.nav a:hover{background:none;text-decoration:underline}
+.nav a[aria-current="page"]{background:none;color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+.iconbtn,.btn,.linkbtn,.seg,select,input[type=search],.selbar .clear,.step,.step .sc,.tag,.tbl-scroll,.note,.clist button,.opt,.road div,.sheet .close,.toast,#tip,.maphint{border-radius:0}
+.btn{transition:none}.btn:hover{transform:none;text-decoration:underline}
+.btn.primary{background:var(--fg);color:var(--bg)}
+.panel,.tile,.selbar,.rail,.pcard,.mapcard,.clist{box-shadow:none}
+.panel{border:none;border-top:1px solid var(--line);padding:18px 0}
+.tile,.selbar{border:none;border-top:2px solid var(--fg);padding-left:0;padding-right:0}
+.pcard{border:none;border-top:1px solid var(--line);padding:14px 0}
+.pgrid{gap:0 32px}
+.rail{border:none;border-right:1px solid var(--line)}
+.eyebrow{font-variant:small-caps;text-transform:none;letter-spacing:.05em;font-size:15px;font-weight:400}
+.rail h4,th,.tile .k{font-family:var(--serif);font-variant:small-caps;text-transform:none;letter-spacing:.04em;font-size:14px;font-weight:600}
+.selbar .n small,.cap,.trail-help,.countnote{font-family:var(--serif)}
+.subtabs button{font-weight:400;font-size:16px}
+.subtabs button[aria-selected="true"]{border-bottom-color:var(--fg)}
+.tag{background:none;border:none;padding:0;font-style:italic;font-size:14px}
+.tag+.tag::before{content:"\00b7 ";font-style:normal;color:var(--faint)}
+.tag.ee{background:none;color:var(--muted)}
+.linkbtn{border:none;background:none;padding:0 10px 0 0;font-weight:400;font-size:15px;color:var(--accent-ink)}
+.linkbtn.oa{background:none}
+footer{font-size:15px}
+/* home */
+.home{padding-block:36px 40px}
+.home h1{font-size:34px;line-height:1.2;margin:0 0 10px}
+.home p{max-width:36em;margin:0 0 14px}
+.home h2{font-size:24px;margin:46px 0 10px}
+.home .counts{display:flex;flex-wrap:wrap;gap:6px 26px;color:var(--muted);font-size:16px;margin:18px 0 24px}
+.home .counts b{font-family:var(--mono);font-weight:500;color:var(--fg);margin-right:6px}
+.hsearch{display:flex;gap:8px;max-width:640px}
+.hsearch input{flex:1;font-size:17px;padding:9px 12px;background:var(--bg)}
+.hsearch button{border:1px solid var(--fg);background:var(--fg);color:var(--bg);padding:0 16px;font-size:16px}
+.cites{list-style:none;padding:0;margin:0}
+.cites li{padding:9px 0;border-bottom:1px solid var(--line);font-size:17px;line-height:1.45}
+.cites button{all:unset;cursor:pointer;color:var(--accent-ink)}
+.cites button:hover{text-decoration:underline}
+.cites .yr{font-family:var(--mono);font-size:14px;color:var(--muted);margin-right:10px}
+.cites .m{color:var(--muted);font-size:15px}
+.dots{font-size:17px;line-height:1.8}
+.dots .sep{color:var(--faint);margin:0 7px}
+.home .mapcard,.home .clist{border:none;padding:0}
+.home figure{margin:10px 0 0}
+.home figcaption{font-size:15px;color:var(--muted);margin-top:6px;max-width:44em}
+</style>
+
+<header class="top">
+  <div class="wide gut">
+    <a class="brand" href="#home" aria-label="Narrative messaging evidence home"><b>narrative messaging evidence &nbsp;&middot;</b></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#home" data-route="home">Home</a>
+      <a href="#explore" data-route="explore">Explore</a>
+      <a href="#papers" data-route="papers">Studies</a>
+      <a href="#data" data-route="data">Data</a>
+      <a href="#about" data-route="about">About</a>
+    </nav>
+    <button class="iconbtn" id="theme" aria-label="Switch light or dark theme"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
+  </div>
+</header>
+
+<!-- ================= HOME ================= -->
+<div data-page="home">
+  <div class="home gut"><div class="wide">
+    <h1>Effects of Narrative Messaging</h1>
+    <p>A database of randomised studies of entertainment&ndash;education: radio dramas, television series, films and other stories designed to inform or persuade. Each study links to its paper, and every coded effect can be filtered, re-weighted and copied for reuse.</p>
+    <form class="hsearch" id="home-search" role="search"><input type="search" id="home-q" placeholder="Search by author, title, topic, country or measure" aria-label="Search studies"><button type="submit">Search</button></form>
+    <div class="counts" id="statstrip"></div>
+
+    <h2>Studies in the database</h2>
+    <ul class="cites" id="home-cited"></ul>
+    <p style="margin-top:12px"><a href="#papers">All studies &raquo;</a></p>
+
+    <h2>Where the studies were run</h2>
+    <p>Circle area is the number of studies in each country. Select a country to see its studies.</p>
+    <div class="mapwrap">
+      <div class="mapcard"><svg id="home-map" role="img" aria-label="World map of study locations"></svg></div>
+      <div class="clist" id="home-clist"></div>
+    </div>
+
+    <h2>Summary of coded effects</h2>
+    <figure><div class="scrollx"><svg id="hero-sub" aria-label="Pooled effect by outcome type"></svg></div>
+    <figcaption id="hero-dcap"></figcaption></figure>
+    <p style="margin-top:14px"><a href="#explore">Filter, re-weight and plot the estimates &raquo;</a></p>
+
+    <h2>Resources</h2>
+    <div class="dots"><a href="#explore">Explorer</a><span class="sep">&middot;</span><a href="#papers">Study list</a><span class="sep">&middot;</span><a href="#data">Codebook</a><span class="sep">&middot;</span><a href="#data">Copy findings as CSV</a><span class="sep">&middot;</span><a href="#about">Methods</a></div>
+  </div></div>
+</div>
+
+<!-- ================= DESK: EXPLORE + PAPERS ================= -->
+<div data-page="desk" hidden>
+  <div class="wide gut desk">
+    <aside class="rail" aria-label="Filters">
+      <div class="rail-sec" id="rail-analysis">
+        <h4>Analysis</h4>
+        <div class="field"><label>Weighting model</label>
+          <div class="seg" id="seg-model"><button data-v="random" aria-pressed="true">Random-effects</button><button data-v="fixed" aria-pressed="false">Fixed-effect</button></div></div>
+        <div class="field" style="margin:0"><label>Unit of analysis</label>
+          <div class="seg" id="seg-unit"><button data-v="study" aria-pressed="true">One per study</button><button data-v="finding" aria-pressed="false">Every finding</button></div></div>
+      </div>
+      <div class="rail-sec">
+        <h4>Search &amp; years</h4>
+        <div class="field"><input type="search" id="q" placeholder="Author, title, topic, measure&hellip;" aria-label="Search studies"></div>
+        <div class="yr"><select id="y0" aria-label="From year"></select><span>to</span><select id="y1" aria-label="To year"></select></div>
+      </div>
+      <div class="countnote">Numbers beside each option are the studies you would get by also ticking it.</div>
+      <div id="facets"></div>
+    </aside>
+
+    <main style="min-width:0">
+      <div class="selbar">
+        <div class="row1">
+          <div class="n" id="sel-n"></div>
+          <button class="clear" id="clear-all">Clear all filters</button>
+        </div>
+        <div class="trail" id="trail"></div>
+        <div class="trail-help" id="trail-help"></div>
+      </div>
+
+      <!-- EXPLORE -->
+      <div data-sub="explore">
+        <div class="subtabs" role="tablist" aria-label="Analysis views">
+          <button role="tab" data-v="summary" aria-selected="true">Summary</button>
+          <button role="tab" data-v="forest" aria-selected="false">Forest plot</button>
+          <button role="tab" data-v="funnel" aria-selected="false">Funnel plot</button>
+          <button role="tab" data-v="map" aria-selected="false">Map</button>
+          <button role="tab" data-v="table" aria-selected="false">Table</button>
+        </div>
+
+        <section data-v="summary">
+          <div class="tiles" id="tiles"></div>
+          <div class="panel">
+            <h3>Pooled effect by subgroup</h3>
+            <p class="cap">Standardized mean difference (d) with 95% CI under your current model and selection. Each subgroup is pooled separately.</p>
+            <div class="inline-fields"><div class="field"><label for="splitby">Split by</label><select id="splitby"></select></div></div>
+            <div class="scrollx"><svg id="sub-svg"></svg></div>
+          </div>
+        </section>
+
+        <section data-v="forest" hidden>
+          <div class="panel">
+            <h3>Forest plot</h3>
+            <p class="cap">One row per study, findings averaged within study, sorted by effect. Square area tracks the study's weight in the pool; the diamond is the pooled estimate. Select a row to open the paper.</p>
+            <div class="inline-fields"><div class="field"><label for="forest-color">Color by</label><select id="forest-color"></select></div></div>
+            <div class="scrollx"><svg id="forest-svg"></svg></div>
+            <div class="legend" id="forest-legend"></div>
+          </div>
+        </section>
+
+        <section data-v="funnel" hidden>
+          <div class="panel">
+            <h3>Funnel plot</h3>
+            <p class="cap">Effect size against standard error, most precise at the top. The shaded triangle is the pseudo-95% region around the pooled estimate; a lopsided spread can signal small-study or publication bias.</p>
+            <div class="scrollx"><svg id="funnel-svg"></svg></div>
+            <div class="note" id="egger"></div>
+          </div>
+        </section>
+
+        <section data-v="map" hidden>
+          <div class="panel">
+            <h3>Map of the current selection</h3>
+            <p class="cap">Circles show studies matching everything except the country filter. Select a country to add or remove it.</p>
+            <div class="mapwrap">
+              <div class="mapcard" style="box-shadow:none"><svg id="ex-map" role="img" aria-label="Map of selected studies"></svg></div>
+              <div class="clist" id="ex-clist" style="box-shadow:none"></div>
+            </div>
+          </div>
+        </section>
+
+        <section data-v="table" hidden>
+          <div class="panel">
+            <h3>Table</h3>
+            <p class="cap">Select a column heading to sort. Select a study row to open the paper.</p>
+            <div class="inline-fields"><div class="field" style="min-width:240px"><label>Rows</label>
+              <div class="seg" id="seg-tbl"><button data-v="study" aria-pressed="true">Studies</button><button data-v="finding" aria-pressed="false">Findings</button></div></div></div>
+            <div class="tbl-scroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- PAPERS -->
+      <div data-sub="papers" hidden>
+        <div class="ptools">
+          <div class="field"><label for="psort">Sort by</label>
+            <select id="psort"><option value="cites">Most cited</option><option value="year-d">Newest first</option><option value="year-a">Oldest first</option><option value="est">Largest effect</option><option value="k">Most findings</option><option value="name">Author A&ndash;Z</option></select></div>
+          <div class="field"><label for="plinks">Access</label>
+            <select id="plinks"><option value="">All papers</option><option value="oa">Free full text available</option><option value="doi">Has a DOI</option></select></div>
+        </div>
+        <div class="pgrid" id="pgrid"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ================= DATA ================= -->
+<div data-page="data" hidden>
+  <section class="section gut"><div class="wide">
+    <div class="section-head"><div><div class="eyebrow">Data</div><h2>The database</h2><p>663 effect-size findings from 93 randomized studies, each converted to a standardized mean difference with its standard error: 403 findings from the 58 studies in the published meta-analysis (one composite index since split into its six outcomes), and 260 from 35 studies added since (coded by one coder, not yet checked by a second).</p></div></div>
+    <div class="panel">
+      <h3>Copy your selection</h3>
+      <p class="cap" id="copy-cap"></p>
+      <div class="copyrow">
+        <button class="btn primary sm" id="copy-csv">Copy findings as CSV</button>
+        <button class="btn ghost sm" id="copy-refs">Copy reference list</button>
+        <a class="btn ghost sm" href="#explore">Change selection</a>
+      </div>
+      <div class="note"><b>Full replication files.</b> The cleaned spreadsheet, Stata descriptives and R analysis code are in the 2025 replication package. A public repository with direct downloads is planned (see About).</div>
+    </div>
+    <div class="panel">
+      <h3>Codebook</h3>
+      <p class="cap">Variables available for every finding.</p>
+      <div class="scrollx"><table id="codebook"><thead><tr><th>Variable</th><th>Meaning</th><th>Values in the data</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div></section>
+</div>
+
+<!-- ================= ABOUT ================= -->
+<div data-page="about" hidden>
+  <section class="section gut"><div class="wide">
+    <div class="section-head"><div><div class="eyebrow">About</div><h2>Methods and roadmap</h2></div></div>
+    <div class="panel prose" style="max-width:none">
+      <div class="prose">
+        <h3 style="margin-top:4px">What is included</h3>
+        <p>Randomized experiments that test a narrative or entertainment-based intervention against a comparison condition and report an outcome we can standardize. The published meta-analysis covered 58 studies run between 2008 and 2020 in 13 countries, coding 398 separate findings. Since publication we have added 35 studies (mostly 2021\u20132026, from a repeat of the search in OpenAlex and the reference list of Peterman 2025, plus a forward-citation sweep), bringing the database to 93 studies in 26 countries and 663 findings on attitudes, beliefs, intentions, priorities, norms and behavior.</p>
+        <h3>How the effects are pooled here</h3>
+        <ul>
+          <li><b>One per study</b> averages a study's findings before pooling so studies with many outcomes do not dominate. <b>Every finding</b> treats each finding as independent.</li>
+          <li><b>Random-effects</b> estimates between-study variance with DerSimonian&ndash;Laird; <b>fixed-effect</b> uses inverse-variance weights only.</li>
+          <li>Heterogeneity is summarized with I&sup2; and &tau;&sup2;; Egger's regression gives a rough check for small-study bias.</li>
+        </ul>
+        <div class="note"><b>Exploration, not inference.</b> The browser pools are transparent approximations. The published estimates use robust variance estimation (<code>robumeta</code>, hierarchical weights clustered on study, small-sample correction). Cite the article's models for inference.</div>
+        <h3>Paper links</h3>
+        <p>Each study was matched to its published record in OpenAlex. Matched papers link to their DOI, with a free full-text link where OpenAlex lists one. Studies without a reliable match, mostly theses and conference papers, link to a Google Scholar title search instead.</p>
+        <h3>Roadmap</h3>
+      </div>
+      <div class="road">
+        <div><span class="st">Next</span><b>Studies from 2021 onward</b><span>Systematic search and coding of newer experiments, using the original inclusion criteria.</span></div>
+        <div><span class="st">Next</span><b>Open repository</b><span>Versioned data, code and per-study source files with direct downloads.</span></div>
+        <div><span class="st">Later</span><b>Contribute a study</b><span>A submission route for authors to propose experiments for inclusion.</span></div>
+      </div>
+    </div>
+  </div></section>
+</div>
+
+<footer class="gut"><div class="wide">
+  <div><span style="font-variant:small-caps;color:var(--ink)">narrative messaging evidence</span><br>Global Media Lab &middot; data from the 2025 replication package</div>
+  <div>Paper metadata from <a href="https://openalex.org" target="_blank" rel="noopener">OpenAlex</a> (CC0) &middot; map from Natural Earth</div>
+</div></footer>
+
+<div id="drawer" hidden><div class="scrim" id="scrim"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dr-title" id="sheet"></div></div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+/* ===================== config ===================== */
+const FACETS=[
+  {k:'country',label:'Country',open:true},
+  {k:'outcome',label:'Outcome type',open:true,map:{belief:'Beliefs',attitude:'Attitudes',norm:'Perceived norms',priority:'Priorities','behavioral intention':'Behavioral intentions',behavior:'Behaviors'}},
+  {k:'domain',label:'Domain',map:{'health':'Health','non-health':'Non-health'}},
+  {k:'topic',label:'Topic'},
+  {k:'setting',label:'Setting',map:{field:'Field',lab:'Lab',online:'Online'}},
+  {k:'comparison',label:'Comparison group',map:{placebo:'Placebo',pure:'Pure control',nonnarrative:'Non-narrative message',both:'Placebo and pure control'}},
+  {k:'timing',label:'Follow-up timing',map:{'<=1 month':'Within 1 month','>1 month':'Over 1 month','None':'Not reported'}},
+  {k:'edutainment',label:'Edutainment-coded',map:{'1':'Yes','0':'No'}},
+  {k:'prejudice',label:'Prejudice outcome',map:{prejudice:'Prejudice',other:'Other'}},
+  {k:'arm',label:'Treatment arm',open:true,map:{none:'Narrative only',facilitation:'Narrative + facilitation',other:'Narrative + other component',secondary:'Secondary comparison'}},
+  {k:'status',label:'Source',open:true,map:{published:'Published meta-analysis',corrected:'Published, corrected (SE or sign)',added:'Added since publication'}},
+  {k:'sens',label:'Sensitivity check',map:{'recall test':'Recall test of the video\u2019s own content','None':'Not tagged'}}
+];
+const FMAP=Object.fromEntries(FACETS.map(f=>[f.k,f]));
+// outcome types run from what people think to what they do
+const OUTCOME_ORDER=['belief','attitude','norm','priority','behavioral intention','behavior'];
+const ordRank=(k,v)=>k==='outcome'?(OUTCOME_ORDER.indexOf(v)+1||99):0;
+const SPLITS=['outcome','domain','setting','comparison','timing','edutainment','prejudice','country'];
+const CATS=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)'];
+const GEO={USA:'United States of America',UK:'United Kingdom'};
+const COORD={USA:[-98,39],UK:[-2,53.5],Tanzania:[35,-6.3],Nigeria:[8,9.6],Uganda:[32.4,1.4],Rwanda:[29.9,-2],Belgium:[4.6,50.6],China:[104,35],Malawi:[34.3,-13.3],India:[79,22],Turkey:[35,39],Mexico:[-102,23.6],Netherlands:[5.3,52.3],Senegal:[-14.5,14.5],Egypt:[30.8,26.8],Pakistan:[69.3,30.4],Italy:[12.6,42.8],Thailand:[101,15.9],'Burkina Faso':[-1.6,12.2],Indonesia:[113.9,-0.8],Sudan:[30.2,12.9],Bangladesh:[90.4,23.7],Peru:[-75,-9.2],'Sierra Leone':[-11.8,8.5],Vietnam:[106.3,16.2],'South Africa':[24.7,-29]};
+const CODEBOOK=[
+ ['study','Study label (first author, year)'],['title','Title of the paper'],['country','Country where the experiment ran'],['year','Year of publication'],
+ ['setting','Where it ran: field, lab or online'],['topic','Substantive topic of the intervention'],['domain','Health or non-health'],
+ ['edutainment','Coded as entertainment-education (1) or not (0)'],['prejudice','Whether the outcome concerns prejudice'],['outcome','Outcome type'],
+ ['comparison','Comparison condition'],['measure','Name of the outcome measure'],['timing','Time from treatment to measurement'],
+ ['immediate','Measured immediately after treatment (1) or later (0)'],['nt / nc','Treatment and control sample sizes'],
+ ['est','Standardized mean difference (d); positive means change in the intended direction'],['se','Standard error of d'],
+ ['arm','Narrative alone (none) or bundled with another component such as facilitated discussion; bundled arms are excluded by default, following the published inclusion rules'],
+ ['status','published (in the 2025 meta-analysis), corrected (published, with the standard error or the sign of d corrected after an audit) or added (coded since publication)'],
+ ['flag','Coder\u2019s note where a value is uncertain and needs checking against the paper'],
+ ['sens','Sensitivity tag: findings kept in the main estimate but checked with and without (recall test = a quiz on the facts the intervention itself just taught)']
+];
+
+const S={route:'home',sub:'summary',model:'random',unit:'study',tbl:'study',sel:{arm:new Set(['none'])},order:['arm'],y0:null,y1:null,q:'',
+  split:'outcome',fcolor:'domain',sortK:'est',sortDir:-1,psort:'cites',plinks:'',open:new Set(FACETS.filter(f=>f.open).map(f=>f.k)),showAll:new Set()};
+let DATA=[],STUDY={},WORLD=null,YEARS=[];
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt=(x,d=2)=>x==null||isNaN(x)?'\u2013':(x<0?'\u2212':'')+Math.abs(x).toFixed(d);
+const val=(r,k)=>{const v=r[k];return v==null||v===''?'None':String(v);};
+const lab=(k,v)=>{const f=FMAP[k];if(f&&f.map&&f.map[v])return f.map[v];if(v==='None')return 'Not reported';return v.charAt(0).toUpperCase()+v.slice(1);};
+
+/* ===================== boot ===================== */
+try{const t=localStorage.getItem('eeatlas-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+boot();
+async function boot(){
+  try{
+    const [d,w]=await Promise.all([fetch('./data.json').then(r=>r.json()),fetch('./countries-110m.json').then(r=>r.json()).catch(()=>null)]);
+    DATA=d; WORLD=w;
+  }catch(e){document.querySelector('[data-page="home"]').insertAdjacentHTML('afterbegin','<div class="gut"><div class="wide empty" style="margin-top:20px">The data file could not be loaded. Reload the page to try again.</div></div>');return;}
+  DATA.forEach(r=>{r.v=r.se!=null?r.se*r.se:null;});
+  DATA.forEach(r=>{(STUDY[r.study]=STUDY[r.study]||{study:r.study,title:r.title,year:r.year,country:r.country,domain:r.domain,topic:r.topic,setting:r.setting,edutainment:r.edutainment,paper:r.paper||{},rows:[]}).rows.push(r);});
+  Object.values(STUDY).forEach(s=>{s.k=s.rows.length;s.est=mean(s.rows.map(r=>r.est));s.cites=s.paper.cites??-1;});
+  YEARS=[...new Set(DATA.map(r=>r.year).filter(Boolean))].sort();
+  S.y0=YEARS[0];S.y1=YEARS[YEARS.length-1];
+  wire(); route();
+}
+const mean=a=>{a=a.filter(x=>x!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;};
+
+/* ===================== selection ===================== */
+function passes(r,except){
+  if(except!=='year'&&r.year!=null&&(r.year<S.y0||r.year>S.y1))return false;
+  if(except!=='q'&&S.q){const q=S.q;if(![r.study,r.title,r.topic,r.measure,r.country].some(x=>x&&String(x).toLowerCase().includes(q)))return false;}
+  for(const k in S.sel){if(k===except)continue;const set=S.sel[k];if(set&&set.size&&!set.has(val(r,k)))return false;}
+  return true;
+}
+const sel=()=>DATA.filter(r=>passes(r,null));
+const nStud=rows=>new Set(rows.map(r=>r.study)).size;
+function setSel(k,v,on){
+  const set=S.sel[k]||(S.sel[k]=new Set());
+  on?set.add(v):set.delete(v);
+  if(set.size&&!S.order.includes(k))S.order.push(k);
+  if(!set.size){delete S.sel[k];S.order=S.order.filter(x=>x!==k);}
+}
+function clearKey(k){
+  if(k==='year'){S.y0=YEARS[0];S.y1=YEARS[YEARS.length-1];$('#y0').value=S.y0;$('#y1').value=S.y1;}
+  else if(k==='q'){S.q='';$('#q').value='';}
+  else delete S.sel[k];
+  S.order=S.order.filter(x=>x!==k);
+}
+function trackOrder(k,active){if(active&&!S.order.includes(k))S.order.push(k);if(!active)S.order=S.order.filter(x=>x!==k);}
+
+/* ===================== routing ===================== */
+function route(){
+  const h=(location.hash||'#home').slice(1);
+  S.route=['home','explore','papers','data','about'].includes(h)?h:'home';
+  $$('.nav a').forEach(a=>a.setAttribute('aria-current',a.dataset.route===S.route?'page':'false'));
+  const page=(S.route==='explore'||S.route==='papers')?'desk':S.route;
+  $$('[data-page]').forEach(p=>p.hidden=p.dataset.page!==page);
+  $('[data-sub="explore"]').hidden=S.route!=='explore';
+  $('[data-sub="papers"]').hidden=S.route!=='papers';
+  $('#rail-analysis').hidden=S.route!=='explore';
+  render();
+}
+function go(r){if(location.hash==='#'+r)route();else location.hash=r;window.scrollTo({top:0});}
+
+/* ===================== wiring ===================== */
+function wire(){
+  window.addEventListener('hashchange',route);
+  $('#theme').onclick=()=>{const r=document.documentElement,c=r.getAttribute('data-theme'),sd=matchMedia('(prefers-color-scheme:dark)').matches;const n=c?(c==='dark'?'light':'dark'):(sd?'light':'dark');r.setAttribute('data-theme',n);try{localStorage.setItem('eeatlas-theme',n);}catch(e){}render();};
+  segWire('#seg-model','model');segWire('#seg-unit','unit');segWire('#seg-tbl','tbl');
+  $$('.subtabs button').forEach(b=>b.onclick=()=>{S.sub=b.dataset.v;$$('.subtabs button').forEach(x=>x.setAttribute('aria-selected',x===b));$$('[data-sub="explore"] section[data-v]').forEach(s=>s.hidden=s.dataset.v!==S.sub);render();});
+  const yo=YEARS.map(y=>`<option value="${y}">${y}</option>`).join('');
+  $('#y0').innerHTML=yo;$('#y1').innerHTML=yo;$('#y0').value=S.y0;$('#y1').value=S.y1;
+  $('#y0').onchange=e=>{S.y0=+e.target.value;if(S.y0>S.y1){S.y1=S.y0;$('#y1').value=S.y1;}trackOrder('year',S.y0!==YEARS[0]||S.y1!==YEARS[YEARS.length-1]);render();};
+  $('#y1').onchange=e=>{S.y1=+e.target.value;if(S.y1<S.y0){S.y0=S.y1;$('#y0').value=S.y0;}trackOrder('year',S.y0!==YEARS[0]||S.y1!==YEARS[YEARS.length-1]);render();};
+  let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value.trim().toLowerCase();trackOrder('q',!!S.q);render();},160);};
+  $('#clear-all').onclick=()=>{S.sel={arm:new Set(['none'])};S.order=['arm'];clearKey('year');clearKey('q');render();};
+  $('#splitby').innerHTML=SPLITS.map(k=>`<option value="${k}">${FMAP[k].label}</option>`).join('');$('#splitby').value=S.split;$('#splitby').onchange=e=>{S.split=e.target.value;render();};
+  $('#forest-color').innerHTML=['domain','outcome','setting','edutainment','comparison'].map(k=>`<option value="${k}">${FMAP[k].label}</option>`).join('');$('#forest-color').onchange=e=>{S.fcolor=e.target.value;render();};
+  $('#psort').onchange=e=>{S.psort=e.target.value;render();};
+  $('#plinks').onchange=e=>{S.plinks=e.target.value;render();};
+  $('#copy-csv').onclick=copyCSV;$('#copy-refs').onclick=copyRefs;
+  $('#scrim').onclick=closeDrawer;document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+  document.addEventListener('click',e=>{const t=e.target.closest('[data-study]');if(t&&!e.target.closest('a')){e.preventDefault();openDrawer(t.dataset.study);}});
+  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-study][tabindex]')){e.preventDefault();openDrawer(e.target.dataset.study);}});
+  let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,160);});
+  $('#codebook tbody').innerHTML=CODEBOOK.map(([k,m])=>{const key=k.split(' ')[0];const vals=key in (DATA[0]||{})?[...new Set(DATA.map(r=>r[key]).filter(v=>v!=null&&v!==''))]:[];const vs=typeof vals[0]==='number'&&vals.length>12?`numeric, ${fmt(Math.min(...vals))} to ${fmt(Math.max(...vals))}`:vals.length>8?vals.length+' distinct values':vals.join(', ');return `<tr><td class="mono">${k}</td><td style="white-space:normal">${m}</td><td style="white-space:normal;color:var(--muted)">${esc(vs)}</td></tr>`;}).join('');
+}
+function segWire(id,key){$$(id+' button').forEach(b=>b.onclick=()=>{$$(id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b));S[key]=b.dataset.v;render();});}
+
+/* ===================== meta-analysis ===================== */
+function studyUnits(rows){
+  const g={};rows.forEach(r=>{if(r.est!=null&&r.v)(g[r.study]=g[r.study]||[]).push(r);});
+  return Object.entries(g).map(([st,rs])=>{const s=STUDY[st];return {...s,study:st,est:mean(rs.map(r=>r.est)),v:mean(rs.map(r=>r.v)),get se(){return Math.sqrt(this.v);},k:rs.length,rows:rs,outcome:mode(rs,'outcome'),comparison:mode(rs,'comparison'),timing:mode(rs,'timing'),prejudice:mode(rs,'prejudice')};});
+}
+function mode(rs,k){const c={};rs.forEach(r=>{const v=val(r,k);c[v]=(c[v]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1])[0][0];}
+const units=rows=>S.unit==='study'?studyUnits(rows):rows.filter(r=>r.est!=null&&r.v);
+function pool(us,model){
+  model=model||S.model;us=us.filter(u=>u.v>0&&u.est!=null);const k=us.length;if(!k)return null;
+  let sw=0,swy=0,sw2=0;us.forEach(u=>{const w=1/u.v;sw+=w;swy+=w*u.est;sw2+=w*w;});
+  const mFE=swy/sw;let Q=0;us.forEach(u=>{Q+=(u.est-mFE)**2/u.v;});
+  const df=k-1,C=sw-sw2/sw,tau2=k>1?Math.max(0,(Q-df)/C):0,I2=Q>df?(Q-df)/Q*100:0;
+  let est,V,ws;
+  if(model==='fixed'){est=mFE;V=1/sw;ws=us.map(u=>(1/u.v)/sw);}
+  else{let s=0,sy=0;us.forEach(u=>{const w=1/(u.v+tau2);s+=w;sy+=w*u.est;});est=sy/s;V=1/s;ws=us.map(u=>(1/(u.v+tau2))/s);}
+  const se=Math.sqrt(V),z=est/se;
+  return {est,se,lo:est-1.96*se,hi:est+1.96*se,p:2*(1-ncdf(Math.abs(z))),k,tau2,I2,units:us,ws};
+}
+function ncdf(x){const t=1/(1+.2316419*x),d=.3989423*Math.exp(-x*x/2);return 1-d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));}
+
+/* ===================== render ===================== */
+function render(){
+  if(!DATA.length)return;
+  if(S.route==='home')return renderHome();
+  if(S.route==='data')return renderData();
+  if(S.route==='about')return;
+  renderRail();renderSelbar();
+  if(S.route==='papers')return renderPapers();
+  const rows=sel();
+  if(S.sub==='summary'){renderTiles(rows);renderSub(rows);}
+  else if(S.sub==='forest')renderForest(rows);
+  else if(S.sub==='funnel')renderFunnel(rows);
+  else if(S.sub==='map')renderExMap();
+  else if(S.sub==='table')renderTable(rows);
+}
+
+/* ---------- rail ---------- */
+function renderRail(){
+  const box=$('#facets');
+  box.innerHTML=FACETS.map(f=>{
+    const base=DATA.filter(r=>passes(r,f.k));
+    const cnt={},all={};
+    DATA.forEach(r=>{const v=val(r,f.k);(all[v]=all[v]||new Set()).add(r.study);});
+    base.forEach(r=>{const v=val(r,f.k);(cnt[v]=cnt[v]||new Set()).add(r.study);});
+    const vals=Object.keys(all).sort((a,b)=>ordRank(f.k,a)-ordRank(f.k,b)||all[b].size-all[a].size||a.localeCompare(b));
+    const set=S.sel[f.k]||new Set();
+    const lim=S.showAll.has(f.k)?vals.length:8;
+    const shown=vals.filter((v,i)=>i<lim||set.has(v));
+    const opts=shown.map(v=>{const n=cnt[v]?cnt[v].size:0;const on=set.has(v);
+      return `<label class="opt${!n&&!on?' dim':''}"><input type="checkbox" data-k="${f.k}" value="${esc(v)}"${on?' checked':''}><span class="ol" title="${esc(lab(f.k,v))}">${esc(lab(f.k,v))}</span><span class="oc">${n}</span></label>`;}).join('');
+    const more=vals.length>8?`<button class="more" data-more="${f.k}">${S.showAll.has(f.k)?'Show fewer':'Show all '+vals.length}</button>`:'';
+    return `<details class="facet" data-f="${f.k}"${S.open.has(f.k)?' open':''}><summary><span>${f.label}${set.size?`<span class="act">${set.size}</span>`:''}</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></summary><div class="opts">${opts}${more}</div></details>`;
+  }).join('');
+  box.querySelectorAll('input[type=checkbox]').forEach(i=>i.onchange=()=>{setSel(i.dataset.k,i.value,i.checked);render();});
+  box.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>{d.open?S.open.add(d.dataset.f):S.open.delete(d.dataset.f);}));
+  box.querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>{const k=b.dataset.more;S.showAll.has(k)?S.showAll.delete(k):S.showAll.add(k);renderRail();});
+}
+
+/* ---------- selection bar + trail ---------- */
+function stepLabel(k){
+  if(k==='year')return `<b>Years</b> ${S.y0}\u2013${S.y1}`;
+  if(k==='q')return `<b>Search</b> \u201c${esc(S.q)}\u201d`;
+  const vs=[...(S.sel[k]||[])].map(v=>lab(k,v));
+  return `<b>${FMAP[k].label}</b> ${esc(vs.length>2?vs.slice(0,2).join(', ')+' +'+(vs.length-2):vs.join(', '))}`;
+}
+function passStep(r,k){
+  if(k==='year')return r.year==null||(r.year>=S.y0&&r.year<=S.y1);
+  if(k==='q')return [r.study,r.title,r.topic,r.measure,r.country].some(x=>x&&String(x).toLowerCase().includes(S.q));
+  return S.sel[k].has(val(r,k));
+}
+function renderSelbar(){
+  const rows=sel(),ns=nStud(rows),nf=rows.length;
+  $('#sel-n').innerHTML=`${ns} <small>of ${Object.keys(STUDY).length} studies</small> &nbsp;${nf} <small>findings</small>`;
+  let cur=DATA,h=`<span class="step base"><span class="sl">All studies</span><span class="sc">${nStud(DATA)}</span></span>`;
+  S.order.forEach((k,i)=>{cur=cur.filter(r=>passStep(r,k));const last=i===S.order.length-1;
+    h+=`<span class="arrow" aria-hidden="true">&rarr;</span><span class="step${last?' active':''}"><span class="sl">${stepLabel(k)}</span><span class="sc">${nStud(cur)}</span><button class="x" data-clear="${k}" aria-label="Remove ${esc(k==='year'?'year':k==='q'?'search':FMAP[k].label)} filter">&times;</button></span>`;});
+  $('#trail').innerHTML=h;
+  $('#trail-help').textContent=S.order.length?'Each step shows how many studies remain after adding that condition.':'Tick options in the filter panel and each condition you add appears here with the number of studies that still qualify.';
+  $('#clear-all').hidden=!S.order.length;
+  $$('#trail [data-clear]').forEach(b=>b.onclick=()=>{clearKey(b.dataset.clear);render();});
+}
+
+/* ---------- tiles + subgroup ---------- */
+function renderTiles(rows){
+  const p=pool(units(rows));
+  if(!p){$('#tiles').innerHTML='<div class="tile"><div class="k">No studies match</div><div class="d">Remove a filter to see results.</div></div>';return;}
+  $('#tiles').innerHTML=[
+    tile('Pooled effect (d)','hero',fmt(p.est),`95% CI ${fmt(p.lo)} to ${fmt(p.hi)}`),
+    tile('p-value','',p.p<.001?'<.001':p.p.toFixed(3),p.p<.05?'different from zero at 5%':'not significant at 5%'),
+    tile(S.unit==='study'?'Studies pooled':'Findings pooled','',p.k,S.unit==='study'?`${rows.length} findings averaged`:`from ${nStud(rows)} studies`),
+    tile('Heterogeneity','',p.I2.toFixed(0)+'%',`I\u00b2 \u00b7 \u03c4\u00b2 = ${p.tau2.toFixed(3)}`)
+  ].join('');
+}
+const tile=(k,c,v,d)=>`<div class="tile ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`;
+function renderSub(rows){
+  const g={};rows.forEach(r=>{(g[val(r,S.split)]=g[val(r,S.split)]||[]).push(r);});
+  const ent=Object.entries(g).map(([k,rs])=>({k,label:lab(S.split,k),p:pool(units(rs)),n:rs.length,ns:nStud(rs)})).filter(e=>e.p).sort((a,b)=>S.split==='outcome'?ordRank('outcome',a.k)-ordRank('outcome',b.k):b.p.est-a.p.est);
+  dotChart('#sub-svg',ent,pool(units(rows)),{color:true});
+}
+function dotChart(sel,ent,overall,opt={}){
+  const el=$(sel),host=el.parentElement,W=Math.max(320,Math.min(900,host.clientWidth||700));
+  const rowH=opt.rowH||34,padL=Math.min(230,W*.38),padR=52,padT=8,padB=40,maxc=Math.floor((padL-16)/6.9);
+  const H=padT+padB+ent.length*rowH+(overall?rowH+10:0);
+  const all=ent.map(e=>e.p).concat(overall?[overall]:[]);
+  if(!all.length){el.outerHTML=`<svg id="${el.id}"></svg>`;return;}
+  let lo=Math.min(0,...all.map(p=>Math.min(p.lo,p.est))),hi=Math.max(0,...all.map(p=>Math.max(p.hi,p.est)));lo=Math.max(lo,-1.5);hi=Math.min(hi,Math.max(2.5,...all.map(p=>p.est+.3)),5);const pd=(hi-lo)*.06||.1;lo-=pd;hi+=pd;
+  const x=v=>padL+(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*(W-padL-padR);
+  let s=`<svg id="${el.id}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="min-width:${W}px;max-width:none">`;
+  s+=xAxis(x,lo,hi,padT,H-padB,padL,W-padR,'standardized effect (d)');
+  let y=padT+rowH/2;
+  ent.forEach((e,i)=>{const c=opt.color?CATS[i%CATS.length]:'var(--accent)';s+=dotRow(e.label,e.p,x,y,padL,c,e.ns>1||e.n>1?`${e.ns} studies \u00b7 ${e.n} findings`:'',false,maxc,hi);y+=rowH;});
+  if(overall){s+=`<line x1="${padL}" x2="${W-padR}" y1="${y-rowH/2+3}" y2="${y-rowH/2+3}" stroke="var(--line-2)" stroke-dasharray="3 3"/>`;y+=10;s+=dotRow('All selected',overall,x,y,padL,'var(--ink)','',true,maxc,hi);}
+  el.outerHTML=s+'</svg>';tips();
+}
+function xAxis(x,lo,hi,top,bot,l,r,label){
+  let s='';niceTicks(lo,hi,6).forEach(t=>{s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${bot}" stroke="var(--line)" stroke-width="1"/><text x="${x(t)}" y="${bot+16}" fill="var(--muted)" font-size="11" text-anchor="middle">${t===0?'0':fmt(t,1)}</text>`;});
+  s+=`<line x1="${x(0)}" x2="${x(0)}" y1="${top}" y2="${bot}" stroke="var(--muted)" stroke-width="1.2"/>`;
+  s+=`<text x="${(l+r)/2}" y="${bot+33}" fill="var(--muted)" font-size="11" text-anchor="middle">${label}</text>`;return s;
+}
+function dotRow(label,p,x,y,padL,c,extra,bold,maxc=28,hi=9){
+  const short=label.length>maxc?label.slice(0,maxc-1)+'\u2026':label;
+  const tip=`<span class='tt'>${esc(label)}</span><br><span class='tm'>d = ${fmt(p.est)} [${fmt(p.lo)}, ${fmt(p.hi)}]</span>${extra?`<br>k = ${p.k} \u00b7 I\u00b2 = ${p.I2.toFixed(0)}% \u00b7 ${extra}`:''}`;
+  let s=`<g class="pt" data-tip="${tip}"><rect x="0" y="${y-14}" width="100%" height="28" fill="transparent"/>`;
+  s+=`<text x="${padL-12}" y="${y+4}" text-anchor="end" font-size="12" fill="var(--fg)"${bold?' font-weight="700"':''}>${esc(short)}</text>`;
+  s+=`<line x1="${x(p.lo)}" x2="${x(p.hi)}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="${bold?3:2}" stroke-linecap="round"/>`;
+  s+=bold?`<path d="M${x(p.est)} ${y-8}L${x(p.est)+8} ${y}L${x(p.est)} ${y+8}L${x(p.est)-8} ${y}Z" fill="${c}"/>`:`<circle cx="${x(p.est)}" cy="${y}" r="${Math.min(9,4+Math.sqrt(p.k)*1.3)}" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+  if(p.hi>hi)s+=`<path d="M${x(p.hi)} ${y}l-6 -4v8z" fill="${c}"/>`;
+  s+=`<text x="${Math.min(x(p.hi)+8,x(hi)+4)}" y="${y+4}" font-size="11.5" fill="var(--muted)">${fmt(p.est)}</text></g>`;return s;
+}
+
+/* ---------- forest ---------- */
+function renderForest(rows){
+  const el=$('#forest-svg'),p=pool(studyUnits(rows));
+  if(!p){el.outerHTML='<svg id="forest-svg"></svg>';$('#forest-legend').innerHTML='<span>No studies match.</span>';return;}
+  const us=p.units.map((u,i)=>({...u,w:p.ws[i],se:Math.sqrt(u.v)})).sort((a,b)=>a.est-b.est);
+  const keys=[...new Set(Object.values(STUDY).map(s=>S.fcolor==='outcome'||S.fcolor==='comparison'?null:val(s,S.fcolor)).filter(Boolean))];
+  const ckey=u=>val(u,S.fcolor);const allk=[...new Set(us.map(ckey))].sort();
+  const col=u=>CATS[allk.indexOf(ckey(u))%CATS.length];
+  const W=Math.max(600,Math.min(1000,el.parentElement.clientWidth||760)),rowH=21,padL=Math.min(250,W*.33),padR=70,padT=8,padB=42;
+  const H=padT+padB+us.length*rowH+30;
+  let lo=Math.min(0,...us.map(u=>u.est-1.96*u.se)),hi=Math.max(0,...us.map(u=>u.est+1.96*u.se));lo=Math.max(lo,-2);hi=Math.min(hi,3);const pd=(hi-lo)*.04;lo-=pd;hi+=pd;
+  const x=v=>padL+(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo)*(W-padL-padR);
+  let s=`<svg id="forest-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="min-width:${W}px;max-width:none">`;
+  s+=xAxis(x,lo,hi,padT,H-padB,padL,W-padR,'standardized effect (d), 95% CI');
+  s+=`<line x1="${x(p.est)}" x2="${x(p.est)}" y1="${padT}" y2="${H-padB}" stroke="var(--accent)" stroke-dasharray="4 3" opacity=".55"/>`;
+  let y=padT+rowH/2;
+  us.forEach(u=>{const l=u.est-1.96*u.se,h=u.est+1.96*u.se,c=col(u),r=Math.max(2.5,Math.min(8,2+Math.sqrt(u.w)*20));
+    const name=u.study.length>32?u.study.slice(0,30)+'\u2026':u.study;
+    s+=`<g class="pt rowhit" data-study="${esc(u.study)}" data-tip="<span class='tt'>${esc(u.study)}</span><br>${esc(u.country||'')} \u00b7 ${esc(u.topic||'')}<br><span class='tm'>d = ${fmt(u.est)} [${fmt(l)}, ${fmt(h)}]</span><br>${u.k} finding${u.k>1?'s':''} \u00b7 weight ${(u.w*100).toFixed(1)}%<br><i>Select to open the paper</i>">`;
+    s+=`<rect class="hl" x="0" y="${y-rowH/2}" width="${W}" height="${rowH}" fill="transparent"/>`;
+    s+=`<text x="${padL-10}" y="${y+4}" text-anchor="end" font-size="11.5" fill="var(--fg)">${esc(name)}</text>`;
+    s+=`<line x1="${x(l)}" x2="${x(h)}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="1.6"/>`;
+    if(l<lo)s+=`<path d="M${x(lo)} ${y}l5 -3.5v7z" fill="${c}"/>`;if(h>hi)s+=`<path d="M${x(hi)} ${y}l-5 -3.5v7z" fill="${c}"/>`;
+    s+=`<rect x="${x(u.est)-r}" y="${y-r}" width="${2*r}" height="${2*r}" rx="1.5" fill="${c}" stroke="var(--surface)" stroke-width="1"/>`;
+    s+=`<text x="${W-padR+10}" y="${y+4}" font-size="11" fill="var(--muted)">${fmt(u.est)}</text></g>`;y+=rowH;});
+  y+=8;
+  s+=`<g class="pt" data-tip="<span class='tt'>Pooled estimate</span><br><span class='tm'>d = ${fmt(p.est)} [${fmt(p.lo)}, ${fmt(p.hi)}]</span><br>k = ${p.k} \u00b7 I\u00b2 = ${p.I2.toFixed(0)}%"><path d="M${x(p.lo)} ${y}L${x(p.est)} ${y-8}L${x(p.hi)} ${y}L${x(p.est)} ${y+8}Z" fill="var(--accent)"/>`;
+  s+=`<text x="${padL-10}" y="${y+4}" text-anchor="end" font-size="12" font-weight="700" fill="var(--ink)">Pooled (${S.model==='random'?'RE':'FE'})</text><text x="${W-padR+10}" y="${y+4}" font-size="11.5" font-weight="700" fill="var(--ink)">${fmt(p.est)}</text></g>`;
+  el.outerHTML=s+'</svg>';
+  $('#forest-legend').innerHTML=allk.map((k,i)=>`<span><i style="background:${CATS[i%CATS.length]}"></i>${esc(lab(S.fcolor,k))}</span>`).join('');
+  tips();
+}
+
+/* ---------- funnel ---------- */
+function renderFunnel(rows){
+  const el=$('#funnel-svg'),us=units(rows).map(u=>({...u,se:Math.sqrt(u.v)})).filter(u=>u.se>0),p=pool(us);
+  if(!p||us.length<3){el.outerHTML='<svg id="funnel-svg"></svg>';$('#egger').innerHTML='Select at least three studies to draw a funnel plot.';return;}
+  const W=Math.max(460,Math.min(820,el.parentElement.clientWidth||700)),H=Math.round(W*.62),pl=54,pr=20,pt=14,pb=46;
+  const seMax=Math.max(...us.map(u=>u.se))*1.05;
+  let a=Math.min(...us.map(u=>u.est),p.est-1.96*seMax),b=Math.max(...us.map(u=>u.est),p.est+1.96*seMax);const pd=(b-a)*.04;a-=pd;b+=pd;
+  const x=v=>pl+(v-a)/(b-a)*(W-pl-pr),y=s=>pt+s/seMax*(H-pt-pb);
+  let s=`<svg id="funnel-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="min-width:${W}px;max-width:none">`;
+  niceTicks(0,seMax,5).forEach(t=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${pl-8}" y="${y(t)+4}" font-size="10.5" fill="var(--muted)" text-anchor="end">${t.toFixed(2)}</text>`;});
+  niceTicks(a,b,7).forEach(t=>{s+=`<text x="${x(t)}" y="${H-pb+17}" font-size="11" fill="var(--muted)" text-anchor="middle">${t===0?'0':fmt(t,1)}</text>`;});
+  s+=`<path d="M${x(p.est)} ${y(0)}L${x(p.est-1.96*seMax)} ${y(seMax)}L${x(p.est+1.96*seMax)} ${y(seMax)}Z" fill="var(--accent)" fill-opacity=".08" stroke="var(--accent)" stroke-opacity=".45" stroke-dasharray="4 3"/>`;
+  s+=`<line x1="${x(p.est)}" x2="${x(p.est)}" y1="${y(0)}" y2="${y(seMax)}" stroke="var(--accent)" stroke-opacity=".6"/>`;
+  s+=`<line x1="${x(0)}" x2="${x(0)}" y1="${y(0)}" y2="${y(seMax)}" stroke="var(--muted)" stroke-opacity=".6"/>`;
+  s+=`<text x="${(pl+W-pr)/2}" y="${H-8}" font-size="11" fill="var(--muted)" text-anchor="middle">effect size (d)</text><text transform="translate(14 ${(pt+H-pb)/2}) rotate(-90)" font-size="11" fill="var(--muted)" text-anchor="middle">standard error</text>`;
+  us.forEach(u=>{s+=`<circle class="pt" data-study="${esc(u.study)}" cx="${x(u.est)}" cy="${y(u.se)}" r="${S.unit==='study'?5:3.6}" fill="var(--c1)" fill-opacity=".5" stroke="var(--c1)" data-tip="<span class='tt'>${esc(u.study)}</span>${u.measure&&S.unit!=='study'?'<br>'+esc(u.measure):''}<br><span class='tm'>d = ${fmt(u.est)} \u00b7 SE = ${u.se.toFixed(3)}</span>"/>`;});
+  el.outerHTML=s+'</svg>';
+  const n=us.length;let sx=0,sy=0,sxx=0,sxy=0;us.forEach(u=>{const X=1/u.se,Y=u.est/u.se;sx+=X;sy+=Y;sxx+=X*X;sxy+=X*Y;});
+  const bb=(n*sxy-sx*sy)/(n*sxx-sx*sx),aa=(sy-bb*sx)/n;let sse=0;us.forEach(u=>{const X=1/u.se;sse+=(u.est/u.se-aa-bb*X)**2;});
+  const seA=Math.sqrt(sse/(n-2)*sxx/(n*sxx-sx*sx)),pA=2*(1-ncdf(Math.abs(aa/seA)));
+  $('#egger').innerHTML=`<b>Egger's regression test.</b> Intercept ${fmt(aa)} (SE ${seA.toFixed(2)}), p ${pA<.001?'< .001':'= '+pA.toFixed(3)}. ${pA<.05?'The funnel is detectably asymmetric for this selection, so smaller studies may report larger effects; read the pooled estimate with that in mind.':'No clear statistical sign of funnel asymmetry for this selection.'}`;
+  tips();
+}
+
+/* ---------- maps ---------- */
+function countryStats(rows){const c={};rows.forEach(r=>{const k=r.country||'None';(c[k]=c[k]||{rows:[],st:new Set()}).rows.push(r);c[k].st.add(r.study);});
+  for(const k in c){c[k].n=c[k].st.size;c[k].f=c[k].rows.length;const p=pool(studyUnits(c[k].rows));c[k].d=p?p.est:null;}return c;}
+function drawMap(svgSel,stats,opts){
+  const el=$(svgSel);if(!WORLD||!window.d3||!window.topojson){el.outerHTML=`<svg id="${el.id}" viewBox="0 0 600 60"><text x="10" y="34" fill="var(--muted)" font-size="13">Map unavailable. The country list still works.</text></svg>`;return;}
+  const W=960,H=470;
+  const land=topojson.feature(WORLD,WORLD.objects.countries);land.features=land.features.filter(f=>f.properties.name!=='Antarctica');
+  const proj=d3.geoNaturalEarth1().fitExtent([[6,6],[W-6,H-6]],land),path=d3.geoPath(proj);
+  const on=new Set(Object.keys(stats).filter(k=>stats[k].n>0).map(k=>GEO[k]||k));
+  const selc=S.sel.country||new Set();
+  let s=`<svg id="${el.id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${el.getAttribute('aria-label')||'Map'}">`;
+  s+=`<path d="${path({type:'Sphere'})}" fill="var(--sea)" stroke="var(--line)"/>`;
+  s+=`<path d="${path(d3.geoGraticule10())}" fill="none" stroke="var(--line)" stroke-width=".5" opacity=".7"/>`;
+  land.features.forEach(f=>{s+=`<path d="${path(f)}" fill="${on.has(f.properties.name)?'var(--land-on)':'var(--land)'}" stroke="var(--surface)" stroke-width=".6"/>`;});
+  const max=Math.max(1,...Object.values(stats).map(v=>v.n));
+  const keys=Object.keys(COORD).sort((a,b)=>(stats[b]?.n||0)-(stats[a]?.n||0));
+  keys.forEach(k=>{const st=stats[k],n=st?st.n:0,[cx,cy]=proj(COORD[k]),r=n?5+Math.sqrt(n/max)*30:4,isOn=selc.has(k);
+    const tip=`<span class='tt'>${k}</span><br>${n} stud${n===1?'y':'ies'} \u00b7 ${st?st.f:0} findings${st&&st.d!=null?`<br><span class='tm'>pooled d = ${fmt(st.d)}</span>`:''}<br><i>${opts.home?'Select to explore':'Select to '+(isOn?'remove':'add')+' this country'}</i>`;
+    s+=`<g class="pt" data-country="${k}" data-tip="${tip}" tabindex="0" role="button" aria-label="${k}, ${n} studies"><circle cx="${cx}" cy="${cy}" r="${Math.max(r,9)}" fill="transparent"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${n?'var(--accent)':'transparent'}" fill-opacity="${n?.72:0}" stroke="${isOn?'var(--signal)':n?'var(--surface)':'var(--faint)'}" stroke-width="${isOn?3:1.5}"/>`;
+    if(n>=4)s+=`<text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="${n>=10?13:11}" font-weight="600" fill="#fff" style="pointer-events:none">${n}</text>`;
+    s+='</g>';});
+  el.outerHTML=s+'</svg>';
+  const fresh=$(svgSel);
+  fresh.querySelectorAll('[data-country]').forEach(g=>{const act=()=>opts.onPick(g.dataset.country);g.addEventListener('click',act);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}});});
+  tips();
+}
+function countryList(sel,stats,opts){
+  const keys=Object.keys(COORD).sort((a,b)=>(stats[b]?.n||0)-(stats[a]?.n||0)||a.localeCompare(b));
+  const max=Math.max(1,...keys.map(k=>stats[k]?.n||0)),selc=S.sel.country||new Set();
+  $(sel).innerHTML=keys.map(k=>{const n=stats[k]?.n||0;return `<button data-country="${k}" aria-pressed="${selc.has(k)}" class="${n?'':'zero'}"><span class="cn">${k}</span><span class="cc">${n} ${n===1?'study':'studies'}</span><span class="bar"><i style="width:${n/max*100}%"></i></span></button>`;}).join('');
+  $$(sel+' [data-country]').forEach(b=>b.onclick=()=>opts.onPick(b.dataset.country));
+}
+function renderExMap(){
+  const base=DATA.filter(r=>passes(r,'country')),st=countryStats(base);
+  const pick=k=>{const has=(S.sel.country||new Set()).has(k);setSel('country',k,!has);render();};
+  drawMap('#ex-map',st,{onPick:pick});countryList('#ex-clist',st,{onPick:pick});
+}
+
+/* ---------- table ---------- */
+function renderTable(rows){
+  let data,cols;
+  if(S.tbl==='study'){data=studyUnits(rows).map(u=>({study:u.study,year:u.year,country:u.country,topic:u.topic,domain:u.domain,venue:u.paper.venue||'',k:u.k,est:u.est,se:Math.sqrt(u.v),cites:u.paper.cites??null}));
+    cols=[['study','Study'],['year','Year','num'],['country','Country'],['topic','Topic'],['domain','Domain'],['venue','Venue'],['k','Findings','num'],['cites','Cited by','num'],['est','Mean d','num'],['se','SE','num']];}
+  else{data=rows.filter(r=>r.est!=null).map(r=>({study:r.study,year:r.year,country:r.country,outcome:r.outcome,measure:r.measure,timing:r.timing,est:r.est,se:r.se}));
+    cols=[['study','Study'],['year','Year','num'],['outcome','Outcome'],['measure','Measure'],['timing','Timing'],['est','d','num'],['se','SE','num']];}
+  if(!cols.some(c=>c[0]===S.sortK)){S.sortK='est';S.sortDir=-1;}
+  const k=S.sortK,dir=S.sortDir;data.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null)return 1;if(bv==null)return -1;return(typeof av==='number'?av-bv:String(av).localeCompare(String(bv)))*dir;});
+  $('#tbl thead').innerHTML='<tr>'+cols.map(c=>`<th data-k="${c[0]}" class="${c[2]||''}" aria-sort="${k===c[0]?(dir>0?'ascending':'descending'):'none'}">${c[1]}${k===c[0]?(dir>0?' \u25b2':' \u25bc'):''}</th>`).join('')+'</tr>';
+  $$('#tbl th').forEach(th=>th.onclick=()=>{const kk=th.dataset.k;if(S.sortK===kk)S.sortDir*=-1;else{S.sortK=kk;S.sortDir=typeof data[0]?.[kk]==='number'?-1:1;}render();});
+  $('#tbl tbody').innerHTML=data.map(d=>`<tr class="click" data-study="${esc(d.study)}" tabindex="0">`+cols.map(c=>{let v=d[c[0]];
+    if(c[0]==='est'||c[0]==='se')v=`<span class="${v<0?'neg':''}">${fmt(v)}</span>`;else if(c[0]==='domain')v=`<span class="tag">${esc(lab('domain',v||'None'))}</span>`;else if(c[0]==='cites')v=v==null||v<0?'\u2013':v;else v=esc(v??'');
+    return `<td class="${c[2]||''}"${c[0]==='measure'||c[0]==='venue'?' style="white-space:normal;min-width:180px"':''}>${v}</td>`;}).join('')+'</tr>').join('')||`<tr><td colspan="${cols.length}" style="padding:24px;color:var(--muted)">No rows match the current filters.</td></tr>`;
+}
+
+/* ---------- papers ---------- */
+function renderPapers(){
+  const rows=sel();let list=studyUnits(rows);
+  if(S.plinks==='oa')list=list.filter(u=>u.paper.oa);if(S.plinks==='doi')list=list.filter(u=>u.paper.doi);
+  const so={cites:(a,b)=>(b.paper.cites??-1)-(a.paper.cites??-1),'year-d':(a,b)=>(b.year||0)-(a.year||0),'year-a':(a,b)=>(a.year||0)-(b.year||0),est:(a,b)=>b.est-a.est,k:(a,b)=>b.k-a.k,name:(a,b)=>a.study.localeCompare(b.study)}[S.psort];
+  list.sort(so);
+  $('#pgrid').innerHTML=list.length?list.map(u=>{const P=u.paper;
+    return `<article class="pcard"><div class="who"><b>${esc(u.study)}</b><span>${esc(u.country||'')}</span></div>
+      <h4><button data-study="${esc(u.study)}">${esc(u.title||u.study)}</button></h4>
+      ${P.venue?`<div class="venue">${esc(P.venue)}${P.cites>=0?` \u00b7 cited ${P.cites}\u00d7`:''}</div>`:''}
+      <div class="tags">${u.edutainment==1?'<span class="tag ee">Edutainment</span>':''}<span class="tag">${esc(lab('domain',val(u,'domain')))}</span><span class="tag">${esc(lab('topic',val(u,'topic')))}</span><span class="tag">${esc(lab('setting',val(u,'setting')))}</span></div>
+      <div class="foot"><span class="stat"><b>${u.k}</b> finding${u.k>1?'s':''} \u00b7 mean d <b class="${u.est<0?'neg':''}">${fmt(u.est)}</b></span><span class="links">${paperLinks(P,true)}</span></div></article>`;}).join(''):'<div class="empty">No papers match these filters. Remove a filter in the trail above.</div>';
+}
+function paperLinks(P,compact){
+  if(P.verified){let h='';if(P.url)h+=`<a class="linkbtn" href="${esc(P.url)}" target="_blank" rel="noopener">${P.doi?'Paper':'Record'} <span aria-hidden="true">\u2197</span></a>`;
+    if(P.oa)h+=`<a class="linkbtn oa" href="${esc(P.oa)}" target="_blank" rel="noopener">Free PDF <span aria-hidden="true">\u2197</span></a>`;
+    if(!compact&&P.openalex)h+=`<a class="linkbtn" href="${esc(P.openalex)}" target="_blank" rel="noopener">OpenAlex <span aria-hidden="true">\u2197</span></a>`;return h;}
+  return `<a class="linkbtn" href="${esc(P.url)}" target="_blank" rel="noopener">Find on Scholar <span aria-hidden="true">\u2197</span></a>`;
+}
+
+/* ---------- drawer ---------- */
+let lastFocus=null;
+function openDrawer(st){
+  const s=STUDY[st];if(!s)return;lastFocus=document.activeElement;const P=s.paper;
+  const fr=s.rows.filter(r=>r.est!=null).sort((a,b)=>b.est-a.est);
+  const p=pool(studyUnits(s.rows));
+  $('#sheet').innerHTML=`<button class="close" id="dr-close">Close <span aria-hidden="true">&times;</span></button>
+    <div class="eyebrow" style="margin-top:4px">${esc(s.study)}</div>
+    <h2 id="dr-title">${esc(s.title||s.study)}</h2>
+    <div class="meta">${P.venue?`<i style="font-family:var(--serif)">${esc(P.venue)}</i> \u00b7 `:''}${s.year||''} \u00b7 ${esc(s.country||'')}${P.cites>=0?` \u00b7 cited ${P.cites} times`:''}</div>
+    <div class="links">${paperLinks(P,false)}</div>
+    ${P.verified?'':'<div class="note" style="margin-top:0">We could not match this study to a published record automatically, so the link runs a Google Scholar search for its title.</div>'}
+    ${s.rows.some(r=>r.status==='added')?'<div class="note" style="margin-top:0">Added after the published meta-analysis. Coded by one coder and not yet checked by a second.</div>':''}
+    <dl>
+      <dt>Topic</dt><dd>${esc(lab('topic',val(s,'topic')))}</dd>
+      <dt>Domain</dt><dd>${esc(lab('domain',val(s,'domain')))}</dd>
+      <dt>Setting</dt><dd>${esc(lab('setting',val(s,'setting')))}</dd>
+      <dt>Edutainment-coded</dt><dd>${s.edutainment==1?'Yes':'No'}</dd>
+      <dt>Sample size</dt><dd class="mono">${(()=>{const r=fr.find(r=>r.nt!=null&&r.nc!=null);return r?`${Math.round(r.nt)} treated \u00b7 ${Math.round(r.nc)} control`:'not reported';})()}</dd>
+      <dt>Study average</dt><dd class="mono">d = ${fmt(p?.est)} (${fr.length} findings)</dd>
+    </dl>
+    <h3>Coded findings</h3>
+    <div class="scrollx"><svg id="dr-svg"></svg></div>
+    <div class="tbl-scroll" style="max-height:none;margin-top:12px"><table><thead><tr><th>Outcome</th><th>Measure</th><th>Timing</th><th class="num">d</th><th class="num">SE</th></tr></thead><tbody>${fr.map(r=>`<tr><td>${esc(lab('outcome',val(r,'outcome')))}</td><td style="white-space:normal;min-width:160px">${esc(r.measure||'')}${r.arm&&r.arm!=='none'?` <i>(${esc(lab('arm',r.arm))})</i>`:''}${r.flag?`<br><small style="color:var(--muted)">Check: ${esc(r.flag)}</small>`:''}</td><td>${esc(lab('timing',val(r,'timing')))}</td><td class="num ${r.est<0?'neg':''}">${fmt(r.est)}</td><td class="num">${r.se!=null?r.se.toFixed(3):'\u2013'}</td></tr>`).join('')}</tbody></table></div>`;
+  $('#drawer').hidden=false;document.body.style.overflow='hidden';
+  $('#dr-close').onclick=closeDrawer;$('#dr-close').focus();
+  const ent=fr.map(r=>({label:r.measure||r.outcome,p:{est:r.est,lo:r.est-1.96*r.se,hi:r.est+1.96*r.se,k:1,I2:0},n:1,ns:1}));
+  requestAnimationFrame(()=>dotChart('#dr-svg',ent,null,{rowH:26}));
+}
+function closeDrawer(){if($('#drawer').hidden)return;$('#drawer').hidden=true;document.body.style.overflow='';$('#tip').style.opacity=0;if(lastFocus&&lastFocus.focus)lastFocus.focus();}
+
+/* ---------- home ---------- */
+function renderHome(){
+  const MAIN=DATA.filter(r=>r.arm==='none'),p=pool(studyUnits(MAIN),'random'),pp=pool(studyUnits(MAIN.filter(r=>r.status!=='added')),'random');
+  const nAdd=nStud(MAIN.filter(r=>r.status==='added'));
+  $('#hero-dcap').innerHTML=`Pooled standardised mean difference by outcome type, with 95% intervals; random effects, one weight per study, narrative-only arms. Across all ${p.k} studies: d = ${fmt(p.est)} (${fmt(p.lo)} to ${fmt(p.hi)}); the ${pp.k} studies in the published meta-analysis alone give d = ${fmt(pp.est)} (${fmt(pp.lo)} to ${fmt(pp.hi)}). ${nAdd} studies were added after publication and have not yet been checked by a second coder. Estimates are provisional.${sensNote(MAIN)}`;
+  const g={};MAIN.forEach(r=>{(g[val(r,'outcome')]=g[val(r,'outcome')]||[]).push(r);});
+  const ent=Object.entries(g).map(([k,rs])=>({k,label:lab('outcome',k),p:pool(studyUnits(rs),'random'),n:rs.length,ns:nStud(rs)})).filter(e=>e.p&&e.ns>=3).sort((a,b)=>ordRank('outcome',a.k)-ordRank('outcome',b.k));
+  dotChart('#hero-sub',ent,null,{rowH:30});
+  const nc=new Set(DATA.map(r=>r.country)).size;
+  $('#statstrip').innerHTML=[[Object.keys(STUDY).length,'studies'],[DATA.length,'coded effects'],[nc,'countries'],[`${YEARS[0]}\u2013${YEARS[YEARS.length-1]}`,''],[Object.values(STUDY).filter(s=>s.paper.verified).length,'linked to the published paper']].map(([b,t])=>`<span><b>${b}</b>${t}</span>`).join('');
+  const st=countryStats(DATA);
+  const pick=k=>{S.sel={arm:new Set(['none']),country:new Set([k])};S.order=['arm','country'];S.psort='year-d';go('papers');};
+  drawMap('#home-map',st,{home:true,onPick:pick});countryList('#home-clist',st,{onPick:pick});
+  const list=Object.values(STUDY).sort((a,b)=>(b.year||0)-(a.year||0)||a.study.localeCompare(b.study)).slice(0,8);
+  $('#home-cited').innerHTML=list.map(s=>`<li><span class="yr">${s.year||''}</span><button data-study="${esc(s.study)}">${esc(s.study)}, \u201c${esc(s.title)}\u201d</button> <span class="m">${s.paper.venue?'<i>'+esc(s.paper.venue)+'</i> \u00b7 ':''}${esc(s.country||'')} \u00b7 ${s.k} effect${s.k>1?'s':''}</span></li>`).join('');
+  const f=$('#home-search');if(!f.dataset.w){f.dataset.w=1;f.onsubmit=e=>{e.preventDefault();const v=$('#home-q').value.trim();S.q=v.toLowerCase();$('#q').value=v;trackOrder('q',!!v);go('papers');};}
+}
+
+// home caption: beliefs with and without findings tagged for a sensitivity check
+function sensNote(MAIN){
+  const B=MAIN.filter(r=>r.outcome==='belief'),tagged=B.filter(r=>r.sens);if(!tagged.length)return '';
+  const a=pool(studyUnits(B),'random'),b=pool(studyUnits(B.filter(r=>!r.sens)),'random');
+  return ` Sensitivity check: ${[...new Set(tagged.map(r=>r.study))].join(', ')} tests recall of facts its video had just taught (d \u2248 2). Beliefs pool to d = ${fmt(a.est)} (${fmt(a.lo)} to ${fmt(a.hi)}) with it and ${fmt(b.est)} (${fmt(b.lo)} to ${fmt(b.hi)}) without; the Sensitivity check filter in the explorer drops it.`;
+}
+
+/* ---------- data page ---------- */
+function renderData(){const rows=sel();$('#copy-cap').innerHTML=`Your current selection in the explorer has <b>${nStud(rows)} studies</b> and <b>${rows.length} findings</b>${S.order.length?' (filters applied)':' (no filters, so everything)'}. Copy it to paste into a spreadsheet, R or Stata.`;}
+function copyCSV(){
+  const rows=sel(),keys=['study','title','country','year','setting','topic','domain','edutainment','prejudice','outcome','comparison','measure','timing','immediate','nt','nc','est','se'];
+  const q=v=>{if(v==null)return '';const s=String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  const csv=[keys.join(',')].concat(rows.map(r=>keys.map(k=>q(r[k])).join(',')).concat([])).join('\n');
+  copyText(csv,`Copied ${rows.length} findings as CSV`);
+}
+function copyRefs(){
+  const sts=[...new Set(sel().map(r=>r.study))].map(s=>STUDY[s]).sort((a,b)=>a.study.localeCompare(b.study));
+  copyText(sts.map(s=>`${s.study}. ${s.title}.${s.paper.venue?' '+s.paper.venue+'.':''}${s.paper.doi?' https://doi.org/'+s.paper.doi:''}`).join('\n'),`Copied ${sts.length} references`);
+}
+function copyText(t,msg){
+  const done=()=>toast(msg);
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>fallback());}else fallback();
+  function fallback(){const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(ta);toast(ok?msg:'Copy was blocked by the browser. Try again from a different browser.');}
+}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+
+/* ---------- helpers ---------- */
+function niceTicks(lo,hi,n){const span=hi-lo;if(span<=0)return[lo];const st0=span/n,m=Math.pow(10,Math.floor(Math.log10(st0))),nr=st0/m,st=(nr<1.5?1:nr<3?2:nr<7?5:10)*m,out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(Math.round(v/st)*st);return out;}
+function tips(){
+  const tip=$('#tip');
+  $$('[data-tip]').forEach(el=>{if(el._t)return;el._t=1;
+    el.addEventListener('mouseenter',()=>{tip.innerHTML=el.getAttribute('data-tip');tip.style.opacity=1;});
+    el.addEventListener('mousemove',e=>{let lx=e.clientX+14,ty=e.clientY+14;if(lx+tip.offsetWidth>innerWidth-8)lx=e.clientX-14-tip.offsetWidth;if(ty+tip.offsetHeight>innerHeight-8)ty=e.clientY-14-tip.offsetHeight;tip.style.left=lx+'px';tip.style.top=ty+'px';});
+    el.addEventListener('mouseleave',()=>{tip.style.opacity=0;});});
+}
+</script>
