@@ -289,11 +289,12 @@ tbody tr.click:hover td{background:var(--surface-2)}
 [hidden]{display:none!important}
 
 /* ---------- Healy overrides ---------- */
-body{font-size:18px;line-height:1.6}
+body{margin:0;font-size:18px;line-height:1.6}
 h1,h2,h3,h4{font-weight:400;letter-spacing:0}
 a{text-decoration:none}a:hover{text-decoration:underline}
 .top{background:var(--surface-2);backdrop-filter:none;border-bottom:1px solid var(--line)}
-.top .wide,.home .wide{max-width:960px}
+.wide{max-width:960px}
+.wide.gut{max-width:992px}  /* its width includes the side padding: same 960 of content */
 .brand b{font-weight:500;font-size:19px;letter-spacing:0}
 .nav a{border-radius:0;color:var(--accent-ink);font-size:16px;padding:6px 10px}
 .nav a:hover{background:none;text-decoration:underline}
