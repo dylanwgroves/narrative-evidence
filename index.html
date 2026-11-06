@@ -1224,7 +1224,7 @@ function sensNote(MAIN){
 /* ---------- ask a question ----------
    Claude only turns the question into filters and a comparison, then reads the numbers back.
    Every number and chart comes from this page's own calculations. */
-const ASK_URL='';  // the Worker's address (worker/README.md). Empty: no box on the public site
+const ASK_URL='https://narrative-evidence-ask.dylanwgroves.workers.dev';  // the Worker's address (worker/README.md). Empty: no box on the public site
 let SAMPLE=null,askCtl=null;
 async function initAsk(){
   if(typeof ASK_PROMPTS==='undefined')return;
