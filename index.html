@@ -1057,7 +1057,7 @@ function fbase(r){
 }
 function fhit(r,except){for(const k in F.sel){if(k===except)continue;if(!F.sel[k].has(fv(r,k)))return false;}return true;}
 const frows=except=>DATA.filter(r=>fbase(r)&&fhit(r,except));
-function fset(k,v){const c=F.sel[k]||(F.sel[k]=new Set());c.has(v)?c.delete(v):c.add(v);if(!c.size)delete F.sel[k];F.n=6;renderHome();}
+function fset(k,v){if(v==='__all')delete F.sel[k];else{const c=F.sel[k]||(F.sel[k]=new Set());c.has(v)?c.delete(v):c.add(v);if(!c.size)delete F.sel[k];}F.n=6;renderHome();}
 
 // the current answers live in the URL, so a result can be sent as a link
 function writeURL(){
@@ -1075,7 +1075,8 @@ function chipRow(q){
   const k=q.k,base=frows(k),chosen=F.sel[k]||new Set();
   const cs=fvals(k).map(v=>{const n=nStud(base.filter(r=>fv(r,k)===v)),on=chosen.has(v);
     return `<button class="chip" data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${on}" ${!n&&!on?'disabled':''}>${esc(flab(k,v))}<small>${n}</small></button>`;}).join('');
-  return `<div class="fq-row" role="group" aria-label="${esc(q.q)}"><p class="q">${esc(q.q)}</p><div class="chips">${cs}</div></div>`;
+  const all=`<button class="chip" data-fk="${k}" data-fv="__all" aria-pressed="${!chosen.size}">All<small>${nStud(base)}</small></button>`;
+  return `<div class="fq-row" role="group" aria-label="${esc(q.q)}"><p class="q">${esc(q.q)}</p><div class="chips">${all}${cs}</div></div>`;
 }
 function moreBody(){
   const box=(k,t)=>`<label><input type="checkbox" data-ft="${k}" ${F[k]?'checked':''}> <span>${t}</span></label>`;
