@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <style>
-/* Layout: a plain home page (search, study list, map, summary), then a research desk (filter rail + views) sharing one selection */
+/* Layout: a home page that answers a practitioner's question (four questions, then the evidence and the closest studies), then a research desk (filter rail + views) */
 /* Healy-style: near-white page, slate serif text, cobalt links, no cards or shadows */
 :root{
   --bg:#fefefe; --surface:#fefefe; --surface-2:#f0f2f5; --line:#e3e7ec; --line-2:#c9d1d9;
@@ -338,6 +338,65 @@ footer{font-size:15px}
 .home .mapcard,.home .clist{border:none;padding:0}
 .home figure{margin:10px 0 0}
 .home figcaption{font-size:15px;color:var(--muted);margin-top:6px;max-width:44em}
+
+/* ---------- home: planning questions ---------- */
+.home .intro{font-size:18px;max-width:34em;color:var(--fg)}
+.fq{margin-top:22px;border-top:1px solid var(--line)}
+.fq-row{display:grid;grid-template-columns:190px minmax(0,1fr);gap:8px 18px;padding:14px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.fq-row .q{font-size:16px;font-weight:600;color:var(--ink);margin:0}
+@media(max-width:700px){.fq-row{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);background:var(--surface);color:var(--fg);padding:6px 11px;font-size:15px;line-height:1.3;border-radius:2px}
+.chip:hover{border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.chip[aria-pressed="true"]:hover{color:var(--bg)}
+.chip small{font-family:var(--mono);font-size:12px;opacity:.72;margin-left:5px}
+.chip:disabled{opacity:.42;cursor:default;border-color:var(--line);color:var(--faint)}
+.fmore{border-bottom:1px solid var(--line);padding:10px 0}
+.fmore>summary{cursor:pointer;color:var(--accent-ink);font-size:15px}
+.fmore .fq-row:last-child{border-bottom:none}
+.fmore .tog{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.fmore .tog label{display:flex;gap:8px;align-items:baseline}
+.fmore .seg2{display:flex;gap:6px;flex-wrap:wrap}
+.freset{background:none;border:none;color:var(--accent-ink);padding:0;font-size:15px;text-decoration:underline}
+/* ---------- home: the answer ---------- */
+.ans{margin-top:30px}
+.ans .eyebrow{margin-bottom:6px}
+.ans h2{font-size:30px;line-height:1.2;margin:0 0 10px}
+.ans p{max-width:40em}
+.studydots{display:flex;flex-wrap:wrap;gap:4px;margin:14px 0 6px;max-width:40em}
+.studydots i{width:13px;height:13px;border-radius:50%;display:block;background:var(--line-2)}
+.studydots i.pos{background:var(--pos)}
+.studydots i.neg{background:var(--neg)}
+.dotkey{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:14px;color:var(--muted);margin-bottom:14px}
+.dotkey span{display:inline-flex;gap:6px;align-items:center}
+.dotkey i{width:10px;height:10px;border-radius:50%;background:var(--line-2);display:inline-block}
+.dotkey i.pos{background:var(--pos)}
+.dotkey i.neg{background:var(--neg)}
+.widen{margin:14px 0;padding:12px 14px;background:var(--surface-2)}
+.widen p{margin:0 0 8px}
+.solid{margin:12px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 22px;max-width:48em}
+.solid li{font-size:15px;color:var(--muted);line-height:1.35}
+.solid b{display:block;font-family:var(--mono);font-size:20px;font-weight:500;color:var(--ink)}
+.ans-tools{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:16px;font-size:15px}
+.ans-tools button{background:none;border:none;padding:0;color:var(--accent-ink);text-decoration:underline}
+/* ---------- home: closest studies ---------- */
+.rcards{margin-top:6px}
+.rcard{padding:16px 0;border-bottom:1px solid var(--line)}
+.rcard h3{font-size:18px;line-height:1.3;margin:0 0 3px}
+.rcard h3 a{text-decoration:none}
+.rcard h3 a:hover{text-decoration:underline}
+.rcard .m{font-size:14px;color:var(--muted);margin:0 0 6px}
+.rcard .sm{margin:0 0 6px;max-width:44em}
+.rcard .res{margin:0 0 8px;max-width:44em}
+.rcard .res b{font-weight:600;color:var(--ink)}
+.rcard .res i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--line-2);margin-right:6px}
+.rcard .res i.pos{background:var(--pos)}
+.rcard .res i.neg{background:var(--neg)}
+.rcard .row{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px}
+.rcard .row button{background:none;border:none;padding:0;color:var(--accent-ink);text-decoration:underline}
+.rcard .why{color:var(--muted)}
+.showmore{margin-top:14px}
 </style>
 
 <header class="top">
@@ -357,29 +416,21 @@ footer{font-size:15px}
 <!-- ================= HOME ================= -->
 <div data-page="home">
   <div class="home gut"><div class="wide">
-    <h1>Effects of Narrative Messaging</h1>
-    <p>A database of randomised studies of entertainment&ndash;education: radio dramas, television series, films and other stories designed to inform or persuade. Each study links to its paper, and every coded effect can be filtered, re-weighted and copied for reuse.</p>
-    <form class="hsearch" id="home-search" role="search"><input type="search" id="home-q" placeholder="Search by author, title, topic, country or measure" aria-label="Search studies"><button type="submit">Search</button></form>
+    <h1>Will your story-based program work?</h1>
+    <p class="intro">Tell us what you are planning. We will show what randomized studies of radio dramas, TV series, films and other stories found for programs most like yours.</p>
+    <div class="fq" id="fq"></div>
+    <details class="fmore" id="fmore"><summary>More options</summary><div id="fq2"></div></details>
+    <section class="ans" id="fans" aria-live="polite"></section>
+    <figure id="fby-wrap" hidden style="margin:22px 0 0"><div class="scrollx"><svg id="fby" aria-label="Effect by type of change"></svg></div><figcaption id="fby-cap"></figcaption></figure>
+    <h2 id="frel-h">Most relevant studies</h2>
+    <div class="rcards" id="frel"></div>
+    <div class="showmore" id="frel-more"></div>
+
+    <h2>The full evidence base</h2>
     <div class="counts" id="statstrip"></div>
-
-    <h2>Studies in the database</h2>
-    <ul class="cites" id="home-cited"></ul>
-    <p style="margin-top:12px"><a href="#papers">All studies &raquo;</a></p>
-
-    <h2>Where the studies were run</h2>
-    <p>Circle area is the number of studies in each country. Select a country to see its studies.</p>
-    <div class="mapwrap">
-      <div class="mapcard"><svg id="home-map" role="img" aria-label="World map of study locations"></svg></div>
-      <div class="clist" id="home-clist"></div>
-    </div>
-
-    <h2>Summary of coded effects</h2>
-    <figure><div class="scrollx"><svg id="hero-sub" aria-label="Pooled effect by outcome type"></svg></div>
-    <figcaption id="hero-dcap"></figcaption></figure>
-    <p style="margin-top:14px"><a href="#explore">Filter, re-weight and plot the estimates &raquo;</a></p>
-
-    <h2>Resources</h2>
-    <div class="dots"><a href="#explore">Explorer</a><span class="sep">&middot;</span><a href="#papers">Study list</a><span class="sep">&middot;</span><a href="#data">Codebook</a><span class="sep">&middot;</span><a href="#data">Copy findings as CSV</a><span class="sep">&middot;</span><a href="#about">Methods</a></div>
+    <p id="hero-dcap" style="color:var(--muted);max-width:44em"></p>
+    <form class="hsearch" id="home-search" role="search"><input type="search" id="home-q" placeholder="Search by author, title, topic, country or measure" aria-label="Search studies"><button type="submit">Search</button></form>
+    <div class="dots" style="margin-top:14px"><a href="#explore">Explorer and charts</a><span class="sep">&middot;</span><a href="#papers">All studies</a><span class="sep">&middot;</span><a href="#data">Data and codebook</a><span class="sep">&middot;</span><a href="#about">How this works</a></div>
   </div></div>
 </div>
 
@@ -518,6 +569,14 @@ footer{font-size:15px}
       <div class="prose">
         <h3 style="margin-top:4px">What is included</h3>
         <p>Randomized experiments that test a narrative or entertainment-based intervention against a comparison condition and report an outcome we can standardize. The published meta-analysis covered 58 studies run between 2008 and 2020 in 13 countries, coding 398 separate findings. Since publication we have added 35 studies (mostly 2021\u20132026, from a repeat of the search in OpenAlex and the reference list of Peterman 2025, plus a forward-citation sweep), bringing the database to 93 studies in 26 countries and 663 findings on attitudes, beliefs, intentions, priorities, norms and behavior.</p>
+        <h3>How the home page answers &ldquo;will it work?&rdquo;</h3>
+        <ul>
+          <li><b>What counts.</b> By default, stories on their own compared with nothing or with unrelated content, one estimate per study. Stories compared with a plain information message answer a different question, so they are under More options.</li>
+          <li><b>Chance of a positive effect.</b> Our estimate of the chance that a new program like these has a true effect above zero. It uses the typical effect, how much studies differ from each other, and the uncertainty in both (a prediction distribution, Higgins et al. 2009, t with k&minus;2 degrees of freedom). It is not the chance that an effect is large. We show it only with at least five studies.</li>
+          <li><b>Effect size.</b> d is the difference between groups in standard deviations. An effect of 0.2 puts the average person reached ahead of 58% of people not reached. Small effects can still matter when a program reaches many people cheaply.</li>
+          <li><b>Most relevant studies.</b> Ranked by how many of your answers a study matches. Region and topic count most, then form and what you want to change. Ties favor real-world studies and larger samples. Studies that miss one answer can still appear, and say so.</li>
+          <li><b>Read with care.</b> Published studies may overstate effects, many outcomes are self-reported, and most are measured soon after exposure. Themes, forms and summaries are a first pass from abstracts and papers and have not yet been checked by a second coder.</li>
+        </ul>
         <h3>How the effects are pooled here</h3>
         <ul>
           <li><b>One per study</b> averages a study's findings before pooling so studies with many outcomes do not dominate. <b>Every finding</b> treats each finding as independent.</li>
@@ -549,9 +608,15 @@ footer{font-size:15px}
 <script>
 /* ===================== config ===================== */
 const FACETS=[
-  {k:'country',label:'Country',open:true},
+  {k:'region',label:'Region',open:true,map:{'East & Southern Africa':'East & Southern Africa','West Africa':'West Africa','Middle East & North Africa':'Middle East & North Africa','South Asia':'South Asia','East & Southeast Asia':'East & Southeast Asia','Latin America':'Latin America','North America & Europe':'North America & Europe'}},
+  {k:'theme',label:'Theme',open:true,map:{gender:'Gender & violence',srh:'Sexual health & HIV',mch:'Mothers, children & nutrition',prevention:'Preventing disease',mental:'Mental health',cohesion:'Prejudice & peace',governance:'Politics & governance',livelihoods:'Education & livelihoods',environment:'Environment & climate'}},
+  {k:'format',label:'Form',open:true,map:{radio:'Radio or audio',tv:'TV series',film:'Film',short_video:'Short video',print:'Print or comics',live:'Live theatre',mixed:'Mixed media'}},
+  {k:'delivery',label:'How people got it',map:{broadcast:'Broadcast to everyone',group:'Group screening or listening',individual:'Individually'}},
+  {k:'dose',label:'Exposure',map:{one_off:'One time',series:'Several episodes'}},
+  {k:'audience',label:'Audience',map:{general:'General adults',youth:'Young people',university:'University students',women:'Women',men:'Men',parents:'Parents',patients:'Patients',other:'Other'}},
+  {k:'country',label:'Country'},
   {k:'outcome',label:'Outcome type',open:true,map:{belief:'Beliefs',attitude:'Attitudes',norm:'Perceived norms',priority:'Priorities','behavioral intention':'Behavioral intentions',behavior:'Behaviors'}},
-  {k:'domain',label:'Domain',map:{'health':'Health','non-health':'Non-health'}},
+  {k:'domain',label:'Domain (published)',map:{'health':'Health','non-health':'Non-health'}},
   {k:'topic',label:'Topic'},
   {k:'setting',label:'Setting',map:{field:'Field',lab:'Lab',online:'Online'}},
   {k:'comparison',label:'Comparison group',map:{placebo:'Placebo',pure:'Pure control',nonnarrative:'Non-narrative message',both:'Placebo and pure control'}},
@@ -560,13 +625,13 @@ const FACETS=[
   {k:'prejudice',label:'Prejudice outcome',map:{prejudice:'Prejudice',other:'Other'}},
   {k:'arm',label:'Treatment arm',open:true,map:{none:'Narrative only',facilitation:'Narrative + facilitation',other:'Narrative + other component',secondary:'Secondary comparison'}},
   {k:'status',label:'Source',open:true,map:{published:'Published meta-analysis',corrected:'Published, corrected (SE or sign)',added:'Added since publication'}},
-  {k:'sens',label:'Sensitivity check',map:{'recall test':'Recall test of the video\u2019s own content','None':'Not tagged'}}
+  {k:'sens',label:'Sensitivity check',map:{'recall test':'Recall test of the video\u2019s own content','scale check':'Value may be on the wrong scale','None':'Not tagged'}}
 ];
 const FMAP=Object.fromEntries(FACETS.map(f=>[f.k,f]));
 // outcome types run from what people think to what they do
 const OUTCOME_ORDER=['belief','attitude','norm','priority','behavioral intention','behavior'];
 const ordRank=(k,v)=>k==='outcome'?(OUTCOME_ORDER.indexOf(v)+1||99):0;
-const SPLITS=['outcome','domain','setting','comparison','timing','edutainment','prejudice','country'];
+const SPLITS=['outcome','theme','format','region','domain','setting','comparison','timing','edutainment','prejudice','country'];
 const CATS=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)'];
 const GEO={USA:'United States of America',UK:'United Kingdom'};
 const COORD={USA:[-98,39],UK:[-2,53.5],Tanzania:[35,-6.3],Nigeria:[8,9.6],Uganda:[32.4,1.4],Rwanda:[29.9,-2],Belgium:[4.6,50.6],China:[104,35],Malawi:[34.3,-13.3],India:[79,22],Turkey:[35,39],Mexico:[-102,23.6],Netherlands:[5.3,52.3],Senegal:[-14.5,14.5],Egypt:[30.8,26.8],Pakistan:[69.3,30.4],Italy:[12.6,42.8],Thailand:[101,15.9],'Burkina Faso':[-1.6,12.2],Indonesia:[113.9,-0.8],Sudan:[30.2,12.9],Bangladesh:[90.4,23.7],Peru:[-75,-9.2],'Sierra Leone':[-11.8,8.5],Vietnam:[106.3,16.2],'South Africa':[24.7,-29]};
@@ -579,16 +644,17 @@ const CODEBOOK=[
  ['est','Standardized mean difference (d); positive means change in the intended direction'],['se','Standard error of d'],
  ['arm','Narrative alone (none) or bundled with another component such as facilitated discussion; bundled arms are excluded by default, following the published inclusion rules'],
  ['status','published (in the 2025 meta-analysis), corrected (published, with the standard error or the sign of d corrected after an audit) or added (coded since publication)'],
+ ['region','World region of the country'],['theme','Main subject of the intervention (replaces health / non-health for most uses)'],['format','Storytelling form of the main treatment'],['delivery','How the audience got it in the experiment'],['dose','One exposure or several'],['audience','Main group targeted or sampled'],
  ['flag','Coder\u2019s note where a value is uncertain and needs checking against the paper'],
  ['sens','Sensitivity tag: findings kept in the main estimate but checked with and without (recall test = a quiz on the facts the intervention itself just taught)']
 ];
 
 const S={route:'home',sub:'summary',model:'random',unit:'study',tbl:'study',sel:{arm:new Set(['none'])},order:['arm'],y0:null,y1:null,q:'',
   split:'outcome',fcolor:'domain',sortK:'est',sortDir:-1,psort:'cites',plinks:'',open:new Set(FACETS.filter(f=>f.open).map(f=>f.k)),showAll:new Set()};
-let DATA=[],STUDY={},WORLD=null,YEARS=[];
+let DATA=[],STUDY={},WORLD=null,YEARS=[],TEXT={};
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const fmt=(x,d=2)=>x==null||isNaN(x)?'\u2013':(x<0?'\u2212':'')+Math.abs(x).toFixed(d);
+const fmt=(x,d=2)=>{if(x==null||isNaN(x))return '\u2013';const t=Math.abs(x).toFixed(d);return (x<0&&+t!==0?'\u2212':'')+t;};
 const val=(r,k)=>{const v=r[k];return v==null||v===''?'None':String(v);};
 const lab=(k,v)=>{const f=FMAP[k];if(f&&f.map&&f.map[v])return f.map[v];if(v==='None')return 'Not reported';return v.charAt(0).toUpperCase()+v.slice(1);};
 
@@ -597,15 +663,15 @@ try{const t=localStorage.getItem('eeatlas-theme');if(t)document.documentElement.
 boot();
 async function boot(){
   try{
-    const [d,w]=await Promise.all([fetch('./data.json').then(r=>r.json()),fetch('./countries-110m.json').then(r=>r.json()).catch(()=>null)]);
-    DATA=d; WORLD=w;
+    const [d,w,t]=await Promise.all([fetch('./data.json').then(r=>r.json()),fetch('./countries-110m.json').then(r=>r.json()).catch(()=>null),fetch('./studies.json').then(r=>r.json()).catch(()=>({}))]);
+    DATA=d; WORLD=w; TEXT=t;
   }catch(e){document.querySelector('[data-page="home"]').insertAdjacentHTML('afterbegin','<div class="gut"><div class="wide empty" style="margin-top:20px">The data file could not be loaded. Reload the page to try again.</div></div>');return;}
   DATA.forEach(r=>{r.v=r.se!=null?r.se*r.se:null;});
-  DATA.forEach(r=>{(STUDY[r.study]=STUDY[r.study]||{study:r.study,title:r.title,year:r.year,country:r.country,domain:r.domain,topic:r.topic,setting:r.setting,edutainment:r.edutainment,paper:r.paper||{},rows:[]}).rows.push(r);});
+  DATA.forEach(r=>{(STUDY[r.study]=STUDY[r.study]||{study:r.study,title:r.title,year:r.year,country:r.country,domain:r.domain,topic:r.topic,setting:r.setting,edutainment:r.edutainment,region:r.region,theme:r.theme,theme2:r.theme2,format:r.format,delivery:r.delivery,dose:r.dose,audience:r.audience,paper:r.paper||{},rows:[]}).rows.push(r);});
   Object.values(STUDY).forEach(s=>{s.k=s.rows.length;s.est=mean(s.rows.map(r=>r.est));s.cites=s.paper.cites??-1;});
   YEARS=[...new Set(DATA.map(r=>r.year).filter(Boolean))].sort();
   S.y0=YEARS[0];S.y1=YEARS[YEARS.length-1];
-  wire(); route();
+  readURL(); wire(); route();
 }
 const mean=a=>{a=a.filter(x=>x!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;};
 
@@ -634,7 +700,7 @@ function trackOrder(k,active){if(active&&!S.order.includes(k))S.order.push(k);if
 
 /* ===================== routing ===================== */
 function route(){
-  const h=(location.hash||'#home').slice(1);
+  const h=(location.hash||'#home').slice(1).split('?')[0];
   S.route=['home','explore','papers','data','about'].includes(h)?h:'home';
   $$('.nav a').forEach(a=>a.setAttribute('aria-current',a.dataset.route===S.route?'page':'false'));
   const page=(S.route==='explore'||S.route==='papers')?'desk':S.route;
@@ -648,7 +714,7 @@ function go(r){if(location.hash==='#'+r)route();else location.hash=r;window.scro
 
 /* ===================== wiring ===================== */
 function wire(){
-  window.addEventListener('hashchange',route);
+  window.addEventListener('hashchange',()=>{readURL();route();});
   $('#theme').onclick=()=>{const r=document.documentElement,c=r.getAttribute('data-theme'),sd=matchMedia('(prefers-color-scheme:dark)').matches;const n=c?(c==='dark'?'light':'dark'):(sd?'light':'dark');r.setAttribute('data-theme',n);try{localStorage.setItem('eeatlas-theme',n);}catch(e){}render();};
   segWire('#seg-model','model');segWire('#seg-unit','unit');segWire('#seg-tbl','tbl');
   $$('.subtabs button').forEach(b=>b.onclick=()=>{S.sub=b.dataset.v;$$('.subtabs button').forEach(x=>x.setAttribute('aria-selected',x===b));$$('[data-sub="explore"] section[data-v]').forEach(s=>s.hidden=s.dataset.v!==S.sub);render();});
@@ -946,9 +1012,12 @@ function openDrawer(st){
     <div class="links">${paperLinks(P,false)}</div>
     ${P.verified?'':'<div class="note" style="margin-top:0">We could not match this study to a published record automatically, so the link runs a Google Scholar search for its title.</div>'}
     ${s.rows.some(r=>r.status==='added')?'<div class="note" style="margin-top:0">Added after the published meta-analysis. Coded by one coder and not yet checked by a second.</div>':''}
+    ${TEXT[st]?`<p>${esc(TEXT[st].summary)}</p><p>${esc(TEXT[st].result)}</p>`:''}
     <dl>
       <dt>Topic</dt><dd>${esc(lab('topic',val(s,'topic')))}</dd>
-      <dt>Domain</dt><dd>${esc(lab('domain',val(s,'domain')))}</dd>
+      <dt>Theme</dt><dd>${esc(lab('theme',val(s,'theme')))}</dd>
+      <dt>Form</dt><dd>${esc(lab('format',val(s,'format')))}</dd>
+      <dt>Reached people</dt><dd>${esc(lab('delivery',val(s,'delivery')))}</dd>
       <dt>Setting</dt><dd>${esc(lab('setting',val(s,'setting')))}</dd>
       <dt>Edutainment-coded</dt><dd>${s.edutainment==1?'Yes':'No'}</dd>
       <dt>Sample size</dt><dd class="mono">${(()=>{const r=fr.find(r=>r.nt!=null&&r.nc!=null);return r?`${Math.round(r.nt)} treated \u00b7 ${Math.round(r.nc)} control`:'not reported';})()}</dd>
@@ -964,21 +1033,151 @@ function openDrawer(st){
 }
 function closeDrawer(){if($('#drawer').hidden)return;$('#drawer').hidden=true;document.body.style.overflow='';$('#tip').style.opacity=0;if(lastFocus&&lastFocus.focus)lastFocus.focus();}
 
-/* ---------- home ---------- */
+/* ---------- home: planning questions ---------- */
+const OG={belief:'belief',attitude:'attitude',priority:'attitude',norm:'norm','behavioral intention':'intention',behavior:'behavior'};
+const OGL={belief:'Knowledge and beliefs',attitude:'Attitudes',norm:'Social norms',intention:'Intentions',behavior:'Behavior'};
+const FQ=[{k:'region',q:'Where will it run?'},{k:'theme',q:'What is it about?'},{k:'format',q:'What form will it take?'},{k:'og',q:'What do you want to change?'}];
+const FQ2=[{k:'audience',q:'Who is it for?'},{k:'delivery',q:'How will people get it?'},{k:'dose',q:'How much exposure?'}];
+const FKEYS=[...FQ,...FQ2].map(q=>q.k);
+const F={sel:{},field:false,lasting:false,norecall:false,keepscale:false,cmp:'nothing',bundled:false,model:'random',unit:'study',n:6};
+const fv=(r,k)=>k==='og'?OG[r.outcome]:r[k];
+const flab=(k,v)=>k==='og'?OGL[v]:lab(k,v);
+const fvals=k=>k==='og'?Object.keys(OGL):Object.keys(FMAP[k].map).filter(v=>DATA.some(r=>r[k]===v));
+function fbase(r){
+  if(r.est==null||!r.v)return false;
+  if(F.bundled?r.arm==='secondary':r.arm!=='none')return false;
+  if(F.cmp==='nothing'&&r.comparison==='nonnarrative')return false;
+  if(F.cmp==='info'&&r.comparison!=='nonnarrative')return false;
+  if(F.field&&r.setting!=='field')return false;
+  if(F.lasting&&r.timing!=='>1 month')return false;
+  if(F.norecall&&r.sens==='recall test')return false;
+  if(!F.keepscale&&r.sens==='scale check')return false;  // suspected scale error: out unless asked for
+  if(r.not_program)return false;  // tests harmful content rather than a program; stays in the explorer
+  return true;
+}
+function fhit(r,except){for(const k in F.sel){if(k===except)continue;if(!F.sel[k].has(fv(r,k)))return false;}return true;}
+const frows=except=>DATA.filter(r=>fbase(r)&&fhit(r,except));
+function fset(k,v){const c=F.sel[k]||(F.sel[k]=new Set());c.has(v)?c.delete(v):c.add(v);if(!c.size)delete F.sel[k];F.n=6;renderHome();}
+
+// the current answers live in the URL, so a result can be sent as a link
+function writeURL(){
+  const p=new URLSearchParams();for(const k in F.sel)p.set(k,[...F.sel[k]].join('|'));
+  ['field','lasting','norecall','keepscale','bundled'].forEach(k=>{if(F[k])p.set(k,1);});if(F.cmp!=='nothing')p.set('cmp',F.cmp);
+  const q=p.toString();try{history.replaceState(null,'',location.pathname+location.search+'#home'+(q?'?'+q:''));}catch(e){}
+}
+function readURL(){
+  const m=location.hash.match(/^#home\?(.*)$/);if(!m)return;
+  const p=new URLSearchParams(m[1]);F.sel={};
+  FKEYS.forEach(k=>{if(p.get(k))F.sel[k]=new Set(p.get(k).split('|').filter(v=>fvals(k).includes(v)));if(F.sel[k]&&!F.sel[k].size)delete F.sel[k];});
+  ['field','lasting','norecall','keepscale','bundled'].forEach(k=>{F[k]=p.get(k)==='1';});F.cmp=p.get('cmp')||'nothing';
+}
+function chipRow(q){
+  const k=q.k,base=frows(k),chosen=F.sel[k]||new Set();
+  const cs=fvals(k).map(v=>{const n=nStud(base.filter(r=>fv(r,k)===v)),on=chosen.has(v);
+    return `<button class="chip" data-fk="${k}" data-fv="${esc(v)}" aria-pressed="${on}" ${!n&&!on?'disabled':''}>${esc(flab(k,v))}<small>${n}</small></button>`;}).join('');
+  return `<div class="fq-row" role="group" aria-label="${esc(q.q)}"><p class="q">${esc(q.q)}</p><div class="chips">${cs}</div></div>`;
+}
+function moreBody(){
+  const box=(k,t)=>`<label><input type="checkbox" data-ft="${k}" ${F[k]?'checked':''}> <span>${t}</span></label>`;
+  const seg=(k,opts)=>`<div class="seg2">${opts.map(([v,t])=>`<button class="chip" data-fs="${k}" data-fv="${v}" aria-pressed="${F[k]===v}">${t}</button>`).join('')}</div>`;
+  const row=(q,b)=>`<div class="fq-row"><p class="q">${q}</p><div>${b}</div></div>`;
+  return FQ2.map(chipRow).join('')
+   +row('Which studies?',`<div class="tog">${box('field','Real-world studies only (no lab or online experiments)')}${box('lasting','Only effects measured more than a month later')}${box('bundled','Include programs that added discussion groups or other support')}${box('norecall','Leave out quizzes on the facts a video has just taught')}${box('keepscale','Include a finding with a suspected scale error (Paluck and Green 2009, d = 4.39)')}</div>`)
+   +row('Compared with',seg('cmp',[['nothing','Nothing or unrelated content'],['info','A plain information message'],['all','Either']]))
+   +row('Statistics',`${seg('model',[['random','Random effects'],['fixed','Fixed effect']])}<div style="height:6px"></div>${seg('unit',[['study','One per study'],['finding','Every finding']])}`);
+}
+// chance that a new program's true effect is above zero (prediction distribution, t with k-2 df)
+function lgam(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,.001208650973866179,-.000005395239384953];let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);let a=1.000000000190015;c.forEach(v=>{y++;a+=v/y;});return -t+Math.log(2.5066282746310005*a/x);}
+function tcdf(t,df){const c=Math.exp(lgam((df+1)/2)-lgam(df/2))/Math.sqrt(df*Math.PI),f=x=>c*Math.pow(1+x*x/df,-(df+1)/2),n=400,h=Math.abs(t)/n;let s=f(0)+f(Math.abs(t));for(let i=1;i<n;i++)s+=f(i*h)*(i%2?4:2);const a=s*h/3;return t>=0?.5+a:.5-a;}
+const pNew=p=>p.k<5?null:tcdf(p.est/Math.sqrt(p.tau2+p.se*p.se),p.k-2);
+const sizeWord=d=>{const a=Math.abs(d);return a<.1?'very small':a<.25?'small':a<.5?'moderate':'large';};
+function headline(p,P){
+  if(!p)return 'No studies match all of this yet';
+  const nw=`only ${p.k} ${p.k>1?'studies':'study'}`;
+  if(P==null)return p.lo>0?(p.est>=.1?`Promising, but ${nw}`:`A very small effect, from ${nw}`):`Too few studies to say (${p.k})`;
+  if(P>=.8)return `Likely to help, with a ${sizeWord(p.est)} effect`;
+  if(P>=.6)return `Probably helps, but results vary`;
+  if(P>.4)return `Uncertain: results point both ways`;
+  return `Unlikely to help`;
+}
+const uniSel=()=>Object.entries(F.sel).flatMap(([k,c])=>[...c].map(v=>flab(k,v)));
+function studyCalls(rows){return studyUnits(rows).map(u=>{const se=Math.sqrt(u.v),lo=u.est-1.96*se,hi=u.est+1.96*se;return {...u,call:lo>0?'pos':hi<0?'neg':'mid'};});}
+function renderAnswer(rows){
+  const su=studyCalls(rows),us=F.unit==='study'?studyUnits(rows):rows.filter(r=>r.est!=null&&r.v),p=pool(us,F.model);
+  if(p)p.k=F.unit==='study'?p.k:su.length;
+  const P=p?pNew(p):null,k=su.length,pos=su.filter(u=>u.call==='pos').length,neg=su.filter(u=>u.call==='neg').length;
+  su.sort((a,b)=>({pos:0,mid:1,neg:2}[a.call]-{pos:0,mid:1,neg:2}[b.call]));
+  const what=uniSel();
+  let h=`<div class="eyebrow">${what.length?esc(what.join(' \u00b7 ')):'All stories, all places'}</div><h2>${esc(headline(p,P))}</h2>`;
+  if(p){
+    h+=`<div class="studydots" aria-hidden="true">${su.map(u=>`<i class="${u.call}" title="${esc(u.study)}"></i>`).join('')}</div>`;
+    h+=`<div class="dotkey"><span><i class="pos"></i>Clear positive effect (${pos})</span><span><i></i>Too close to zero to tell (${k-pos-neg})</span><span><i class="neg"></i>Clear negative effect (${neg})</span></div>`;
+    const beat=Math.round(ncdf(p.est)*100);
+    h+=`<p>${P!=null?`A new program like this has about ${(n=>(n===8?'an':'a')+` <b>${n} in 10</b>`)(Math.min(9,Math.max(1,Math.round(P*10))))} chance of a positive effect. `:''}The typical effect is ${sizeWord(p.est)}: d = ${fmt(p.est)} (95% interval ${fmt(p.lo)} to ${fmt(p.hi)})${p.est>0?`, which puts the average person reached ahead of ${beat}% of people not reached`:''}.</p>`;
+    const sn=c=>su.filter(c).length,tot=r=>su.filter(u=>u.rows.some(r)).length;
+    h+=`<ul class="solid"><li><b>${sn(u=>u.rows.some(r=>r.setting==='field'))} of ${k}</b>real-world studies</li><li><b>${tot(r=>r.outcome==='behavior')} of ${k}</b>measured behavior</li><li><b>${tot(r=>r.timing==='>1 month')} of ${k}</b>checked after a month or more</li><li><b>${sn(u=>u.region!=='North America & Europe')} of ${k}</b>outside North America and Europe</li></ul>`;
+  }else h+=`<p>Nothing in the database matches every answer. Try removing one.</p>`;
+  const act=Object.entries(F.sel).flatMap(([kk,c])=>[...c].map(v=>[kk,v]));
+  if(k<8&&act.length){
+    const opt=act.map(([kk,v])=>{const c=new Set(F.sel[kk]);c.delete(v);const n=nStud(DATA.filter(r=>fbase(r)&&fhit(r,kk)&&(!c.size||c.has(fv(r,kk)))));return {kk,v,n};}).filter(o=>o.n>k).sort((a,b)=>b.n-a.n).slice(0,3);
+    if(opt.length)h+=`<div class="widen"><p>${k?'That is thin evidence.':''} See more by removing an answer:</p><div class="chips">${opt.map(o=>`<button class="chip" data-fk="${o.kk}" data-fv="${esc(o.v)}" aria-pressed="true">Remove ${esc(flab(o.kk,o.v))}<small>${o.n} studies</small></button>`).join('')}</div></div>`;
+  }
+  h+=`<div class="ans-tools"><button id="f-copy">Copy a link to this result</button><button id="f-exp">Open in the explorer</button>${Object.keys(F.sel).length?'<button id="f-reset">Start over</button>':''}<a href="#about">How this is worked out</a></div>`;
+  $('#fans').innerHTML=h;
+  const c=$('#f-copy');if(c)c.onclick=()=>copyText(location.href,'Link copied');
+  const r=$('#f-reset');if(r)r.onclick=()=>{F.sel={};F.n=6;renderHome();};
+  $('#f-exp').onclick=()=>{const m={arm:new Set(['none'])};for(const kk in F.sel){if(kk==='og')m.outcome=new Set(Object.keys(OG).filter(o=>F.sel.og.has(OG[o])));else m[kk]=new Set(F.sel[kk]);}S.sel=m;S.order=Object.keys(m);go('explore');};
+  // by type of change, when the reader has not picked just one
+  const by={};rows.forEach(r=>{(by[OG[r.outcome]]=by[OG[r.outcome]]||[]).push(r);});
+  const ent=Object.keys(OGL).filter(o=>by[o]&&nStud(by[o])>=3).map(o=>({k:o,label:OGL[o],p:pool(studyUnits(by[o]),F.model),n:by[o].length,ns:nStud(by[o])}));
+  const show=ent.length>=2&&(!F.sel.og||F.sel.og.size>1);$('#fby-wrap').hidden=!show;
+  if(show){dotChart('#fby',ent,null,{rowH:30});$('#fby-cap').textContent='What changed: typical effect and 95% interval, among these studies.';}
+}
+// a study's fit to the answers: region and topic count most, then form, then the outcome
+function fscore(s,rows){
+  let n=0;const hit=[],miss=[];
+  const w={region:3,theme:3,format:2,og:1,audience:1,delivery:1,dose:1};
+  for(const k in F.sel){
+    const ok=k==='og'?rows.some(r=>F.sel.og.has(OG[r.outcome])):F.sel[k].has(s[k]);
+    if(ok){n+=w[k];hit.push(k==='og'?[...F.sel.og].filter(v=>rows.some(r=>OG[r.outcome]===v)).map(v=>OGL[v]).join(', '):flab(k,s[k]));}
+    else if(k==='theme'&&F.sel.theme.has(s.theme2)){n+=2;hit.push(flab('theme',s.theme2));}
+    else miss.push(k==='og'?'outcome':k==='region'?'region':k==='theme'?'topic':k==='format'?'form':FMAP[k].label.toLowerCase());
+  }
+  return {n,hit,miss};
+}
+function renderRelevant(){
+  const g={};DATA.filter(fbase).forEach(r=>{(g[r.study]=g[r.study]||[]).push(r);});
+  const any=Object.keys(F.sel).length;
+  const list=Object.entries(g).map(([st,rows])=>{const s=STUDY[st],f=fscore(s,rows),o=F.sel.og?rows.filter(r=>F.sel.og.has(OG[r.outcome])):rows,u=studyCalls(o.length?o:rows)[0];
+    return {s,f,u,n:Math.max(...rows.map(r=>(r.nt||0)+(r.nc||0))),field:rows.some(r=>r.setting==='field')};})
+   .filter(x=>x.u&&(!any||x.f.n>0)).sort((a,b)=>b.f.n-a.f.n||a.f.miss.length-b.f.miss.length||(b.field-a.field)||b.n-a.n||(b.s.year||0)-(a.s.year||0));
+  $('#frel-h').textContent=any?'Most relevant studies':'Large real-world studies to start with';
+  const call={pos:'Positive effect',neg:'Negative effect',mid:'No clear effect'};
+  $('#frel').innerHTML=list.slice(0,F.n).map(({s,f,u,field})=>{const T=TEXT[s.study]||{},P=s.paper;
+    return `<article class="rcard"><h3><a href="${esc(P.url||'#')}" target="_blank" rel="noopener">${esc(s.title||s.study)}</a></h3>
+      <p class="m">${esc(s.study)} \u00b7 ${esc(s.country||'')} \u00b7 ${esc(lab('format',val(s,'format')))} \u00b7 ${field?'Real-world study':esc(lab('setting',val(s,'setting')))+' study'}</p>
+      ${T.summary?`<p class="sm">${esc(T.summary)}</p>`:''}
+      <p class="res"><i class="${u.call}"></i><b>${call[u.call]}</b> (d = ${fmt(u.est)})${T.result?`. ${esc(T.result)}`:''}</p>
+      <div class="row">${paperLinks(P,true)}<button data-study="${esc(s.study)}">All results</button>${any?`<span class="why">${f.hit.length?'Matches: '+esc(f.hit.join(', ')):''}${f.miss.length?(f.hit.length?'. ':'')+'Different '+esc(f.miss.join(', ')):''}</span>`:''}</div></article>`;}).join('')||'<p>No studies to show.</p>';
+  $('#frel-more').innerHTML=list.length>F.n?`<button class="chip" id="f-morest">Show more studies<small>${list.length-F.n}</small></button>`:'';
+  const b=$('#f-morest');if(b)b.onclick=()=>{F.n+=6;renderRelevant();};
+}
 function renderHome(){
+  const focus=document.activeElement&&document.activeElement.dataset?{k:document.activeElement.dataset.fk,s:document.activeElement.dataset.fs,t:document.activeElement.dataset.ft,v:document.activeElement.dataset.fv}:{};
+  $('#fq').innerHTML=FQ.map(chipRow).join('');
+  $('#fq2').innerHTML=moreBody();
+  renderAnswer(frows());renderRelevant();
+  if(S.route==='home')writeURL();
+  if(focus.k||focus.s||focus.t){const el=[...document.querySelectorAll('.home [data-fk],.home [data-fs],.home [data-ft]')].find(e=>e.dataset.fk===focus.k&&e.dataset.fs===focus.s&&e.dataset.ft===focus.t&&e.dataset.fv===focus.v);if(el)el.focus();}
+  const hb=$('.home');if(!hb.dataset.w){hb.dataset.w=1;
+    hb.addEventListener('click',e=>{const c=e.target.closest('[data-fk]');if(c)return fset(c.dataset.fk,c.dataset.fv);const g=e.target.closest('[data-fs]');if(g){F[g.dataset.fs]=g.dataset.fv;renderHome();}});
+    hb.addEventListener('change',e=>{const t=e.target.dataset&&e.target.dataset.ft;if(t){F[t]=e.target.checked;renderHome();}});
+  }
   const MAIN=DATA.filter(r=>r.arm==='none'),p=pool(studyUnits(MAIN),'random'),pp=pool(studyUnits(MAIN.filter(r=>r.status!=='added')),'random');
   const nAdd=nStud(MAIN.filter(r=>r.status==='added'));
-  $('#hero-dcap').innerHTML=`Pooled standardised mean difference by outcome type, with 95% intervals; random effects, one weight per study, narrative-only arms. Across all ${p.k} studies: d = ${fmt(p.est)} (${fmt(p.lo)} to ${fmt(p.hi)}); the ${pp.k} studies in the published meta-analysis alone give d = ${fmt(pp.est)} (${fmt(pp.lo)} to ${fmt(pp.hi)}). ${nAdd} studies were added after publication and have not yet been checked by a second coder. Estimates are provisional.${sensNote(MAIN)}`;
-  const g={};MAIN.forEach(r=>{(g[val(r,'outcome')]=g[val(r,'outcome')]||[]).push(r);});
-  const ent=Object.entries(g).map(([k,rs])=>({k,label:lab('outcome',k),p:pool(studyUnits(rs),'random'),n:rs.length,ns:nStud(rs)})).filter(e=>e.p&&e.ns>=3).sort((a,b)=>ordRank('outcome',a.k)-ordRank('outcome',b.k));
-  dotChart('#hero-sub',ent,null,{rowH:30});
+  $('#hero-dcap').innerHTML=`Pooled across all ${p.k} narrative-only studies: d = ${fmt(p.est)} (${fmt(p.lo)} to ${fmt(p.hi)}); the ${pp.k} studies in the published meta-analysis alone give d = ${fmt(pp.est)} (${fmt(pp.lo)} to ${fmt(pp.hi)}). ${nAdd} studies were added after publication and have not yet been checked by a second coder. Estimates are provisional.${sensNote(MAIN)}`;
   const nc=new Set(DATA.map(r=>r.country)).size;
-  $('#statstrip').innerHTML=[[Object.keys(STUDY).length,'studies'],[DATA.length,'coded effects'],[nc,'countries'],[`${YEARS[0]}\u2013${YEARS[YEARS.length-1]}`,''],[Object.values(STUDY).filter(s=>s.paper.verified).length,'linked to the published paper']].map(([b,t])=>`<span><b>${b}</b>${t}</span>`).join('');
-  const st=countryStats(DATA);
-  const pick=k=>{S.sel={arm:new Set(['none']),country:new Set([k])};S.order=['arm','country'];S.psort='year-d';go('papers');};
-  drawMap('#home-map',st,{home:true,onPick:pick});countryList('#home-clist',st,{onPick:pick});
-  const list=Object.values(STUDY).sort((a,b)=>(b.year||0)-(a.year||0)||a.study.localeCompare(b.study)).slice(0,8);
-  $('#home-cited').innerHTML=list.map(s=>`<li><span class="yr">${s.year||''}</span><button data-study="${esc(s.study)}">${esc(s.study)}, \u201c${esc(s.title)}\u201d</button> <span class="m">${s.paper.venue?'<i>'+esc(s.paper.venue)+'</i> \u00b7 ':''}${esc(s.country||'')} \u00b7 ${s.k} effect${s.k>1?'s':''}</span></li>`).join('');
+  $('#statstrip').innerHTML=[[Object.keys(STUDY).length,'studies'],[DATA.length,'coded effects'],[nc,'countries'],[`${YEARS[0]}\u2013${YEARS[YEARS.length-1]}`,'']].map(([b,t])=>`<span><b>${b}</b>${t}</span>`).join('');
   const f=$('#home-search');if(!f.dataset.w){f.dataset.w=1;f.onsubmit=e=>{e.preventDefault();const v=$('#home-q').value.trim();S.q=v.toLowerCase();$('#q').value=v;trackOrder('q',!!v);go('papers');};}
 }
 
@@ -992,7 +1191,7 @@ function sensNote(MAIN){
 /* ---------- data page ---------- */
 function renderData(){const rows=sel();$('#copy-cap').innerHTML=`Your current selection in the explorer has <b>${nStud(rows)} studies</b> and <b>${rows.length} findings</b>${S.order.length?' (filters applied)':' (no filters, so everything)'}. Copy it to paste into a spreadsheet, R or Stata.`;}
 function copyCSV(){
-  const rows=sel(),keys=['study','title','country','year','setting','topic','domain','edutainment','prejudice','outcome','comparison','measure','timing','immediate','nt','nc','est','se'];
+  const rows=sel(),keys=['study','title','country','region','year','setting','topic','domain','theme','format','delivery','dose','audience','edutainment','prejudice','outcome','comparison','measure','timing','immediate','nt','nc','est','se'];
   const q=v=>{if(v==null)return '';const s=String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
   const csv=[keys.join(',')].concat(rows.map(r=>keys.map(k=>q(r[k])).join(',')).concat([])).join('\n');
   copyText(csv,`Copied ${rows.length} findings as CSV`);
