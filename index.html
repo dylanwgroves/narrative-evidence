@@ -428,7 +428,7 @@ footer{font-size:15px}
 .ask .ask-btns button{font:inherit;padding:8px 20px;border:1px solid var(--accent);background:var(--accent);color:var(--bg);border-radius:2px}
 .ask .ask-btns button.alt{background:none;color:var(--accent-ink)}
 .ask button:disabled{opacity:.5;cursor:default}
-.ask .out{margin:10px 0 0;max-width:44em;scroll-margin-top:90px}
+.ask .out{margin:10px 0 0;max-width:44em}
 .ask .src{margin:6px 0 0;font-size:14px;color:var(--muted);max-width:44em}
 .ask-figs{margin-top:12px}
 .ask-figs p{margin:0 0 6px;font-weight:600;color:var(--ink)}
@@ -1313,8 +1313,8 @@ async function ask(q){
     askApply(sp||{});
     setTab('summary');
     if(S.route==='compare')render();
-    else{const moved=new Promise(r=>window.addEventListener('hashchange',r,{once:true}));go('compare');await moved;}  // the page and the box move on hashchange
-    o.scrollIntoView({block:'start'});
+    else{const moved=new Promise(r=>window.addEventListener('hashchange',r,{once:true}));location.hash='compare';await moved;}  // the page and the box move on hashchange
+    window.scrollTo({top:o.getBoundingClientRect().top+window.scrollY-$('.top').offsetHeight-16,behavior:'instant'});  // the answer sits below the charts
     const what=uniSel();
     src.hidden=false;src.textContent=`Showing: ${what.length?what.join(' \u00b7 '):'all stories, all places'}, compared by ${FMAP[S.split].label.toLowerCase()}. The charts and numbers above come from this site. The summary is written by AI from those numbers.`;
     const nums=askNumbers();
