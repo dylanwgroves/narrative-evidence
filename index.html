@@ -428,7 +428,7 @@ footer{font-size:15px}
 .ask .ask-btns button{font:inherit;padding:8px 20px;border:1px solid var(--accent);background:var(--accent);color:var(--bg);border-radius:2px}
 .ask .ask-btns button.alt{background:none;color:var(--accent-ink)}
 .ask button:disabled{opacity:.5;cursor:default}
-.ask .out{margin:10px 0 0;max-width:44em}
+.ask .out{margin:10px 0 0;max-width:44em;scroll-margin-top:90px}
 .ask .src{margin:6px 0 0;font-size:14px;color:var(--muted);max-width:44em}
 .ask-figs{margin-top:12px}
 .ask-figs p{margin:0 0 6px;font-weight:600;color:var(--ink)}
@@ -457,6 +457,15 @@ footer{font-size:15px}
   <div class="home gut"><div class="wide">
     <h1>Will your story-based program work?</h1>
     <p class="intro">Tell us what you are planning. We will show what randomized studies of radio dramas, TV series, films and other stories found for programs most like yours.</p>
+    <div id="fslot-home"><div id="fpanel">
+      <div class="fq" id="fq"></div>
+      <details class="fmore" id="fmore"><summary>More options</summary>
+        <div id="fq2"></div>
+        <div class="fq-row"><p class="q">Search and years</p><div class="fstatic"><input type="search" id="q" placeholder="Author, title, topic, measure&hellip;" aria-label="Search studies"><div class="yr"><select id="y0" aria-label="From year"></select><span>to</span><select id="y1" aria-label="To year"></select></div></div></div>
+      </details>
+    </div></div>
+    <section class="ans" id="fans" aria-live="polite"></section>
+    <figure id="fby-wrap" hidden style="margin:22px 0 0"><div class="scrollx"><svg id="fby" aria-label="Effect by type of change"></svg></div><figcaption id="fby-cap"></figcaption></figure>
     <div id="askslot-home"><div class="ask" id="ask" hidden>
   <label for="ask-q">What are you trying to figure out?</label>
   <p class="ask-hint">Describe your program or ask anything about the evidence, in your own words. Your question goes to Claude, an AI from Anthropic, so please leave out names and personal details.</p>
@@ -467,15 +476,6 @@ footer{font-size:15px}
   <div class="ask-figs" id="ask-figs" hidden></div>
 </div>
 </div>
-    <div id="fslot-home"><div id="fpanel">
-      <div class="fq" id="fq"></div>
-      <details class="fmore" id="fmore"><summary>More options</summary>
-        <div id="fq2"></div>
-        <div class="fq-row"><p class="q">Search and years</p><div class="fstatic"><input type="search" id="q" placeholder="Author, title, topic, measure&hellip;" aria-label="Search studies"><div class="yr"><select id="y0" aria-label="From year"></select><span>to</span><select id="y1" aria-label="To year"></select></div></div></div>
-      </details>
-    </div></div>
-    <section class="ans" id="fans" aria-live="polite"></section>
-    <figure id="fby-wrap" hidden style="margin:22px 0 0"><div class="scrollx"><svg id="fby" aria-label="Effect by type of change"></svg></div><figcaption id="fby-cap"></figcaption></figure>
     <h2 id="frel-h">Most relevant studies</h2>
     <div class="rcards" id="frel"></div>
     <div class="showmore" id="frel-more"></div>
@@ -492,7 +492,6 @@ footer{font-size:15px}
 <div data-page="desk" hidden>
   <div class="wide gut desk">
     <main style="min-width:0">
-      <div id="askslot-desk"></div>
       <details class="fdesk" id="fdesk"><summary id="fdesk-sum"></summary><div id="fslot-desk"></div></details>
 
       <!-- EXPLORE -->
@@ -563,6 +562,7 @@ footer{font-size:15px}
             <div class="tbl-scroll"><table id="tbl"><thead></thead><tbody></tbody></table></div>
           </div>
         </section>
+        <div id="askslot-desk"></div>
       </div>
 
       <!-- PAPERS -->
@@ -1312,9 +1312,11 @@ async function ask(q){
     if(sp&&sp.unanswerable){o.textContent=`This database cannot answer that: ${sp.unanswerable}`;return;}
     askApply(sp||{});
     setTab('summary');
-    if(S.route==='compare')render();else go('compare');  // go() redraws once the page has changed
+    if(S.route==='compare')render();
+    else{const moved=new Promise(r=>window.addEventListener('hashchange',r,{once:true}));go('compare');await moved;}  // the page and the box move on hashchange
+    o.scrollIntoView({block:'start'});
     const what=uniSel();
-    src.hidden=false;src.textContent=`Showing: ${what.length?what.join(' \u00b7 '):'all stories, all places'}, compared by ${FMAP[S.split].label.toLowerCase()}. Charts and numbers come from this site. The summary above is written by AI from those numbers.`;
+    src.hidden=false;src.textContent=`Showing: ${what.length?what.join(' \u00b7 '):'all stories, all places'}, compared by ${FMAP[S.split].label.toLowerCase()}. The charts and numbers above come from this site. The summary is written by AI from those numbers.`;
     const nums=askNumbers();
     if(!nums){o.textContent='No studies match that. Try a wider question.';return;}
     if(nums.bal.text)src.textContent=`${nums.bal.text} ${src.textContent}`;
